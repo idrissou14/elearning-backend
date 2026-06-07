@@ -1,0 +1,134 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+model User {
+  id            String      @id @default(uuid())
+  email         String      @unique
+  passwordHash  String?     @map("password_hash")
+  ldapUid       String?     @unique @map("ldap_uid")
+  role          Role        @default(STUDENT)
+  firstName     String      @map("first_name")
+  lastName      String      @map("last_name")
+  status        UserStatus  @default(ACTIVE)
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  deletedAt     DateTime?   @map("deleted_at")  // Soft delete RGPD
+  sessions      Session[]
+  taughtClasses Class[]      @relation("TeacherClasses")
+  enrollments   Enrollment[]
+  auditLogs     AuditLog[]
+  gradesGiven   Grade[]      @relation("GradedBy")
+
+  @@map("users")
+}
+
+model Session {
+  id           String    @id @default(uuid())
+  userId       String    @map("user_id")
+  refreshToken String    @unique @map("refresh_token")
+  deviceInfo   String?   @map("device_info")
+  expiresAt    DateTime  @map("expires_at")
+  revokedAt    DateTime? @map("revoked_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  actorId      String?  @map("actor_id")
+  action       String
+  resourceType String?  @map("resource_type")
+  resourceId   String?  @map("resource_id")
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  payload      Json?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  actor        User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}
+
+model Class {
+  id           String       @id @default(uuid())
+  name         String
+  academicYear String       @map("academic_year")
+  teacherId    String?      @map("teacher_id")
+  status       String       @default("draft")
+  createdAt    DateTime     @default(now()) @map("created_at")
+
+  teacher      User?        @relation("TeacherClasses", fields: [teacherId], references: [id])
+  enrollments  Enrollment[]
+  classCourses ClassCourse[]
+
+  @@map("classes")
+}
+
+model Enrollment {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  classId    String   @map("class_id")
+  enrolledAt DateTime @default(now()) @map("enrolled_at")
+  status     String   @default("active")
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  class      Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  grades     Grade[]
+
+  @@unique([userId, classId])
+  @@map("enrollments")
+}
+
+model ClassCourse {
+  classId    String @map("class_id")
+  courseId   String @map("course_id")   // Ref MongoDB
+  orderIndex Int    @default(0) @map("order_index")
+
+  class      Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@id([classId, courseId])
+  @@map("class_courses")
+}
+
+model Grade {
+  id           String   @id @default(uuid())
+  enrollmentId String   @map("enrollment_id")
+  courseId     String   @map("course_id")   // Ref MongoDB
+  quizId       String?  @map("quiz_id")     // Ref MongoDB
+  value        Decimal  @db.Decimal(5, 2)
+  weight       Decimal  @default(1.0) @db.Decimal(3, 2)
+  gradedBy     String?  @map("graded_by")
+  gradedAt     DateTime @default(now()) @map("graded_at")
+  comment      String?
+
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
+  grader       User?      @relation("GradedBy", fields: [gradedBy], references: [id])
+
+  @@map("grades")
+}
