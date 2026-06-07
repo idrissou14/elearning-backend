@@ -27,6 +27,8 @@
     "@nestjs/swagger": "^11.4.4",
     "@nestjs/typeorm": "^11.0.1",
     "@prisma/client": "^7.8.0",
+    "@types/bcrypt": "^6.0.0",
+    "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "pg": "^8.21.0",
@@ -70,6 +72,9 @@
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "moduleNameMapper": {
+      "^.*/generated/prisma/client$": "<rootDir>/../__mocks__/prisma.client.mock.ts"
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"
