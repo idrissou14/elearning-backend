@@ -41,7 +41,7 @@ export class AuthService {
       throw new UnauthorizedException('Session expired or invalid');
     }
 
-    const tokenMatch = await bcrypt.compare(rawToken, session.refreshToken);
+    const tokenMatch = await bcrypt.compare(rawToken, session.refreshTokenHash);
     if (!tokenMatch) throw new UnauthorizedException('Invalid refresh token');
 
     await this.prisma.session.update({
@@ -78,7 +78,7 @@ export class AuthService {
     const hashedRefresh = await bcrypt.hash(refreshToken, 10);
 
     await this.prisma.session.create({
-      data: { id: sessionId, userId, refreshToken: hashedRefresh, expiresAt },
+      data: { id: sessionId, userId, refreshTokenHash: hashedRefresh, expiresAt },
     });
 
     return { accessToken, refreshToken };
