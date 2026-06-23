@@ -6,6 +6,7 @@ import {
 import { Test, TestingModule } from '@nestjs/testing';
 import { EnrollmentStatus, Role } from '../../generated/prisma/enums';
 import { ClassGroupService } from '../class-group/class-group.service';
+import { CrossDbConsistencyService } from '../consistency/cross-db-consistency.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserService } from '../user/user.service';
 import { EnrollmentService } from './enrollment.service';
@@ -23,6 +24,7 @@ const mockPrisma = {
 
 const mockUserService = { findOne: jest.fn() };
 const mockClassGroupService = { findOne: jest.fn() };
+const mockCrossDb = { initEnrollmentProgress: jest.fn() };
 
 describe('EnrollmentService', () => {
   let service: EnrollmentService;
@@ -34,6 +36,7 @@ describe('EnrollmentService', () => {
         { provide: PrismaService, useValue: mockPrisma },
         { provide: UserService, useValue: mockUserService },
         { provide: ClassGroupService, useValue: mockClassGroupService },
+        { provide: CrossDbConsistencyService, useValue: mockCrossDb },
       ],
     }).compile();
 
@@ -73,6 +76,24 @@ describe('EnrollmentService', () => {
       expect(mockUserService.findOne).toHaveBeenCalledWith('u1');
       expect(mockClassGroupService.findOne).toHaveBeenCalledWith('g1');
       expect(mockPrisma.enrollment.create).toHaveBeenCalledWith({ data: dto });
+    });
+
+    it('triggers SAGA-03 progress init for an active enrollment', async () => {
+      mockUserService.findOne.mockResolvedValue({ id: 'u1', role: Role.STUDENT });
+      mockClassGroupService.findOne.mockResolvedValue({ id: 'g1' });
+      mockPrisma.enrollment.findFirst.mockResolvedValue(null);
+      mockPrisma.enrollment.create.mockResolvedValue({
+        id: '1',
+        ...dto,
+        status: EnrollmentStatus.ACTIVE,
+      });
+
+      await service.create(dto);
+
+      expect(mockCrossDb.initEnrollmentProgress).toHaveBeenCalledWith({
+        userId: 'u1',
+        classGroupId: 'g1',
+      });
     });
 
     it('throws BadRequestException when the user is not a student', async () => {

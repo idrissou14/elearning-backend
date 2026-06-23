@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { EnrollmentStatus, Role } from '../../generated/prisma/enums';
 import { ClassGroupService } from '../class-group/class-group.service';
+import { CrossDbConsistencyService } from '../consistency/cross-db-consistency.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserService } from '../user/user.service';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
@@ -17,6 +18,7 @@ export class EnrollmentService {
     private readonly prisma: PrismaService,
     private readonly userService: UserService,
     private readonly classGroupService: ClassGroupService,
+    private readonly crossDb: CrossDbConsistencyService,
   ) {}
 
   findAll(filters?: {
@@ -47,7 +49,19 @@ export class EnrollmentService {
     await this.classGroupService.findOne(dto.classGroupId);
     if (dto.previousEnrollmentId) await this.findOne(dto.previousEnrollmentId);
     await this.ensureNotAlreadyEnrolled(dto.userId, dto.academicYear);
-    return this.prisma.enrollment.create({ data: dto });
+
+    const enrollment = await this.prisma.enrollment.create({ data: dto });
+
+    // SAGA-03 — initialise learner progress for an active enrollment.
+    // Non-blocking by design: Mongo failures are queued for reconciliation.
+    if (enrollment.status === EnrollmentStatus.ACTIVE) {
+      await this.crossDb.initEnrollmentProgress({
+        userId: enrollment.userId,
+        classGroupId: enrollment.classGroupId,
+      });
+    }
+
+    return enrollment;
   }
 
   async update(id: string, dto: UpdateEnrollmentDto) {

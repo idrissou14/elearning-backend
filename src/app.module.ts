@@ -1,5 +1,7 @@
+import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -17,10 +19,28 @@ import { EnrollmentModule } from './enrollment/enrollment.module';
 import { GradeModule } from './grade/grade.module';
 import { CertificateModule } from './certificate/certificate.module';
 import { AuditModule } from './audit/audit.module';
+import { ConsistencyModule } from './consistency/consistency.module';
+import { LmsModule } from './lms/lms.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    MongooseModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        uri: config.getOrThrow<string>('MONGO_URL'),
+      }),
+    }),
+    BullModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        connection: {
+          host: config.get<string>('REDIS_HOST', 'localhost'),
+          port: config.get<number>('REDIS_PORT', 6379),
+          password: config.get<string>('REDIS_PASSWORD') || undefined,
+        },
+      }),
+    }),
     PrismaModule,
     UserModule,
     AuthModule,
@@ -36,6 +56,8 @@ import { AuditModule } from './audit/audit.module';
     GradeModule,
     CertificateModule,
     AuditModule,
+    ConsistencyModule,
+    LmsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
