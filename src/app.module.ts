@@ -16,6 +16,7 @@ import { EvaluationModule } from './evaluation/evaluation.module';
 import { EnrollmentModule } from './enrollment/enrollment.module';
 import { GradeModule } from './grade/grade.module';
 import { CertificateModule } from './certificate/certificate.module';
+import { AuditModule } from './audit/audit.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { CertificateModule } from './certificate/certificate.module';
     EnrollmentModule,
     GradeModule,
     CertificateModule,
+    AuditModule,
   ],
   controllers: [AppController],
   providers: [AppService],
