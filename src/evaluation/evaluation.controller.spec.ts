@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CourseTeacherRole } from '../../generated/prisma/enums';
-import { CourseTeacherController } from './course-teacher.controller';
-import { CourseTeacherService } from './course-teacher.service';
+import { EvaluationType } from '../../generated/prisma/enums';
+import { EvaluationController } from './evaluation.controller';
+import { EvaluationService } from './evaluation.service';
 
 const mockService = {
   findAll: jest.fn(),
@@ -11,16 +11,16 @@ const mockService = {
   remove: jest.fn(),
 };
 
-describe('CourseTeacherController', () => {
-  let controller: CourseTeacherController;
+describe('EvaluationController', () => {
+  let controller: EvaluationController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [CourseTeacherController],
-      providers: [{ provide: CourseTeacherService, useValue: mockService }],
+      controllers: [EvaluationController],
+      providers: [{ provide: EvaluationService, useValue: mockService }],
     }).compile();
 
-    controller = module.get<CourseTeacherController>(CourseTeacherController);
+    controller = module.get<EvaluationController>(EvaluationController);
     jest.clearAllMocks();
   });
 
@@ -29,21 +29,22 @@ describe('CourseTeacherController', () => {
   });
 
   it('delegates findAll with filters', () => {
-    const list = [{ id: '1' }];
+    const list = [{ id: '1', name: 'CC1' }];
     mockService.findAll.mockReturnValue(list);
 
-    expect(controller.findAll('ci1', 't1')).toBe(list);
+    expect(controller.findAll('ci1', EvaluationType.EXAM)).toBe(list);
     expect(mockService.findAll).toHaveBeenCalledWith({
       courseInstanceId: 'ci1',
-      teacherId: 't1',
+      type: EvaluationType.EXAM,
     });
   });
 
   it('delegates create to the service', () => {
     const dto = {
       courseInstanceId: 'ci1',
-      teacherId: 't1',
-      role: CourseTeacherRole.MAIN_TEACHER,
+      type: EvaluationType.CC,
+      name: 'Contrôle continu 1',
+      weight: 0.3,
     };
     const created = { id: '1', ...dto };
     mockService.create.mockReturnValue(created);
@@ -53,7 +54,7 @@ describe('CourseTeacherController', () => {
   });
 
   it('delegates update to the service', () => {
-    const dto = { role: CourseTeacherRole.ASSISTANT };
+    const dto = { name: 'New name' };
     mockService.update.mockReturnValue({ id: '1', ...dto });
 
     controller.update('1', dto);

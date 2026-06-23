@@ -82,7 +82,7 @@ describe('AuthService', () => {
     it('throws when session is expired', async () => {
       mockPrisma.session.findFirst.mockResolvedValue({
         id: 'sid',
-        refreshToken: 'hash',
+        refreshTokenHash: 'hash',
         expiresAt: new Date(Date.now() - 1000),
       });
       await expect(service.refresh('uid', 'sid', 'token')).rejects.toThrow(UnauthorizedException);
@@ -91,7 +91,7 @@ describe('AuthService', () => {
     it('throws when token hash does not match', async () => {
       mockPrisma.session.findFirst.mockResolvedValue({
         id: 'sid',
-        refreshToken: await bcrypt.hash('other-token', 10),
+        refreshTokenHash: await bcrypt.hash('other-token', 10),
         expiresAt: new Date(Date.now() + 60000),
       });
       await expect(service.refresh('uid', 'sid', 'wrong-token')).rejects.toThrow(UnauthorizedException);

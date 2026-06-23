@@ -11,9 +11,11 @@ import { ProgramLevelModule } from './program-level/program-level.module';
 import { CurriculumCourseModule } from './curriculum-course/curriculum-course.module';
 import { ClassGroupModule } from './class-group/class-group.module';
 import { CoursInstanceModule } from './cours-instance/cours-instance.module';
-import { CourseTeacherController } from './course-teacher/course-teacher.controller';
-import { CourseTeacherService } from './course-teacher/course-teacher.service';
 import { CourseTeacherModule } from './course-teacher/course-teacher.module';
+import { EvaluationModule } from './evaluation/evaluation.module';
+import { EnrollmentModule } from './enrollment/enrollment.module';
+import { GradeModule } from './grade/grade.module';
+import { CertificateModule } from './certificate/certificate.module';
 
 @Module({
   imports: [
@@ -28,8 +30,12 @@ import { CourseTeacherModule } from './course-teacher/course-teacher.module';
     ClassGroupModule,
     CoursInstanceModule,
     CourseTeacherModule,
+    EvaluationModule,
+    EnrollmentModule,
+    GradeModule,
+    CertificateModule,
   ],
-  controllers: [AppController, CourseTeacherController],
-  providers: [AppService, CourseTeacherService],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}

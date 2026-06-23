@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CourseTeacherRole } from '../../generated/prisma/enums';
-import { CourseTeacherController } from './course-teacher.controller';
-import { CourseTeacherService } from './course-teacher.service';
+import { GradeController } from './grade.controller';
+import { GradeService } from './grade.service';
 
 const mockService = {
   findAll: jest.fn(),
@@ -11,16 +10,16 @@ const mockService = {
   remove: jest.fn(),
 };
 
-describe('CourseTeacherController', () => {
-  let controller: CourseTeacherController;
+describe('GradeController', () => {
+  let controller: GradeController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [CourseTeacherController],
-      providers: [{ provide: CourseTeacherService, useValue: mockService }],
+      controllers: [GradeController],
+      providers: [{ provide: GradeService, useValue: mockService }],
     }).compile();
 
-    controller = module.get<CourseTeacherController>(CourseTeacherController);
+    controller = module.get<GradeController>(GradeController);
     jest.clearAllMocks();
   });
 
@@ -32,19 +31,15 @@ describe('CourseTeacherController', () => {
     const list = [{ id: '1' }];
     mockService.findAll.mockReturnValue(list);
 
-    expect(controller.findAll('ci1', 't1')).toBe(list);
+    expect(controller.findAll('e1', 'v1')).toBe(list);
     expect(mockService.findAll).toHaveBeenCalledWith({
-      courseInstanceId: 'ci1',
-      teacherId: 't1',
+      enrollmentId: 'e1',
+      evaluationId: 'v1',
     });
   });
 
   it('delegates create to the service', () => {
-    const dto = {
-      courseInstanceId: 'ci1',
-      teacherId: 't1',
-      role: CourseTeacherRole.MAIN_TEACHER,
-    };
+    const dto = { enrollmentId: 'e1', evaluationId: 'v1', score: 15 };
     const created = { id: '1', ...dto };
     mockService.create.mockReturnValue(created);
 
@@ -53,7 +48,7 @@ describe('CourseTeacherController', () => {
   });
 
   it('delegates update to the service', () => {
-    const dto = { role: CourseTeacherRole.ASSISTANT };
+    const dto = { score: 17 };
     mockService.update.mockReturnValue({ id: '1', ...dto });
 
     controller.update('1', dto);
