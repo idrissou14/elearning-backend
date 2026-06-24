@@ -15,6 +15,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { CreateQuizDto } from './dto/create-quiz.dto';
+import { Role } from '../../generated/prisma/enums';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { QuizService } from './quiz.service';
 
 @ApiTags('quizzes')
@@ -22,6 +24,7 @@ import { QuizService } from './quiz.service';
 export class QuizController {
   constructor(private readonly quizService: QuizService) {}
 
+  @Roles(Role.ADMIN, Role.TEACHER)
   @Post('evaluation/:id/quiz')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create/attach the quiz of an evaluation (SAGA-02)' })

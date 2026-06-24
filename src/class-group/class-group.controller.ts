@@ -17,12 +17,14 @@ import {
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { ClassStatus } from '../../generated/prisma/enums';
+import { ClassStatus, Role } from '../../generated/prisma/enums';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { ClassGroupService } from './class-group.service';
 import { CreateClassGroupDto } from './dto/create-class-group.dto';
 import { UpdateClassGroupDto } from './dto/update-class-group.dto';
 
 @ApiTags('class-groups')
+@Roles(Role.ADMIN)
 @Controller('class-group')
 export class ClassGroupController {
   constructor(private readonly classGroupService: ClassGroupService) {}

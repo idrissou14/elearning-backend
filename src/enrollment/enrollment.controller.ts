@@ -18,12 +18,14 @@ import {
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { EnrollmentStatus } from '../../generated/prisma/enums';
+import { EnrollmentStatus, Role } from '../../generated/prisma/enums';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
 import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
 import { EnrollmentService } from './enrollment.service';
 
 @ApiTags('enrollments')
+@Roles(Role.ADMIN)
 @Controller('enrollment')
 export class EnrollmentController {
   constructor(private readonly enrollmentService: EnrollmentService) {}

@@ -18,11 +18,14 @@ import {
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { Role } from '../../generated/prisma/enums';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { CourseTeacherService } from './course-teacher.service';
 import { CreateCourseTeacherDto } from './dto/create-course-teacher.dto';
 import { UpdateCourseTeacherDto } from './dto/update-course-teacher.dto';
 
 @ApiTags('course-teachers')
+@Roles(Role.ADMIN)
 @Controller('course-teacher')
 export class CourseTeacherController {
   constructor(private readonly courseTeacherService: CourseTeacherService) {}

@@ -17,12 +17,14 @@ import {
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Semester } from '../../generated/prisma/enums';
+import { Role, Semester } from '../../generated/prisma/enums';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { CreateCurriculumCourseDto } from './dto/create-curriculum-course.dto';
 import { UpdateCurriculumCourseDto } from './dto/update-curriculum-course.dto';
 import { CurriculumCourseService } from './curriculum-course.service';
 
 @ApiTags('curriculum-courses')
+@Roles(Role.ADMIN)
 @Controller('curriculum-course')
 export class CurriculumCourseController {
   constructor(private readonly curriculumCourseService: CurriculumCourseService) {}

@@ -18,11 +18,13 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Role, UserStatus } from '../../generated/prisma/enums';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserService } from './user.service';
 
 @ApiTags('users')
+@Roles(Role.ADMIN)
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}

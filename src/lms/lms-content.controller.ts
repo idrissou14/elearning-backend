@@ -20,6 +20,8 @@ import {
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateCourseContentDto } from './dto/create-course-content.dto';
+import { Role } from '../../generated/prisma/enums';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { LmsContentService } from './lms-content.service';
 
 @ApiTags('course-content')
@@ -27,6 +29,7 @@ import { LmsContentService } from './lms-content.service';
 export class LmsContentController {
   constructor(private readonly lmsContentService: LmsContentService) {}
 
+  @Roles(Role.ADMIN, Role.TEACHER)
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create/publish the LMS content of a course instance (SAGA-01)' })

@@ -16,11 +16,14 @@ import {
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { Role } from '../../generated/prisma/enums';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { DepartementService } from './departement.service';
 import { CreateDepartementDto } from './dto/create-departement.dto';
 import { UpdateDepartementDto } from './dto/update-departement.dto';
 
 @ApiTags('departements')
+@Roles(Role.ADMIN)
 @Controller('departement')
 export class DepartementController {
   constructor(private readonly departementService: DepartementService) {}

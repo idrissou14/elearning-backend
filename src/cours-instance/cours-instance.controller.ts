@@ -17,11 +17,14 @@ import {
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { Role } from '../../generated/prisma/enums';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { CoursInstanceService } from './cours-instance.service';
 import { CreateCoursInstanceDto } from './dto/create-cours-instance.dto';
 import { UpdateCoursInstanceDto } from './dto/update-cours-instance.dto';
 
 @ApiTags('course-instances')
+@Roles(Role.ADMIN)
 @Controller('cours-instance')
 export class CoursInstanceController {
   constructor(private readonly coursInstanceService: CoursInstanceService) {}

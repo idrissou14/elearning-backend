@@ -20,6 +20,8 @@ import {
 } from '@nestjs/swagger';
 import { CreateGradeDto } from './dto/create-grade.dto';
 import { UpdateGradeDto } from './dto/update-grade.dto';
+import { Role } from '../../generated/prisma/enums';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { GradeService } from './grade.service';
 
 @ApiTags('grades')
@@ -43,6 +45,7 @@ export class GradeController {
     return this.gradeService.findOne(id);
   }
 
+  @Roles(Role.ADMIN, Role.TEACHER)
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiCreatedResponse({ description: 'Grade created' })
@@ -52,6 +55,7 @@ export class GradeController {
     return this.gradeService.create(dto);
   }
 
+  @Roles(Role.ADMIN, Role.TEACHER)
   @Patch(':id')
   @ApiOkResponse({ description: 'Grade updated' })
   @ApiNotFoundResponse({ description: 'Grade or related resource not found' })
@@ -60,6 +64,7 @@ export class GradeController {
     return this.gradeService.update(id, dto);
   }
 
+  @Roles(Role.ADMIN, Role.TEACHER)
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Grade deleted' })

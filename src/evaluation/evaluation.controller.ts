@@ -17,7 +17,8 @@ import {
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { EvaluationType } from '../../generated/prisma/enums';
+import { EvaluationType, Role } from '../../generated/prisma/enums';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { CreateEvaluationDto } from './dto/create-evaluation.dto';
 import { UpdateEvaluationDto } from './dto/update-evaluation.dto';
 import { EvaluationService } from './evaluation.service';
@@ -43,6 +44,7 @@ export class EvaluationController {
     return this.evaluationService.findOne(id);
   }
 
+  @Roles(Role.ADMIN, Role.TEACHER)
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiCreatedResponse({ description: 'Evaluation created' })
@@ -51,6 +53,7 @@ export class EvaluationController {
     return this.evaluationService.create(dto);
   }
 
+  @Roles(Role.ADMIN, Role.TEACHER)
   @Patch(':id')
   @ApiOkResponse({ description: 'Evaluation updated' })
   @ApiNotFoundResponse({ description: 'Evaluation or course instance not found' })
@@ -58,6 +61,7 @@ export class EvaluationController {
     return this.evaluationService.update(id, dto);
   }
 
+  @Roles(Role.ADMIN, Role.TEACHER)
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Evaluation deleted' })

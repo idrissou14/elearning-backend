@@ -6,6 +6,9 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // All API routes are served under /api/v1 (versioned namespace).
+  app.setGlobalPrefix('api');
+
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
 
   const config = new DocumentBuilder()
@@ -13,7 +16,8 @@ async function bootstrap() {
     .setVersion('1.0')
     .addBearerAuth()
     .build();
-  SwaggerModule.setup('api', app, SwaggerModule.createDocument(app, config));
+  // Swagger UI served at /docs (kept out of the /api/v1 namespace).
+  SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, config));
 
   await app.listen(process.env.PORT ?? 3000);
 }

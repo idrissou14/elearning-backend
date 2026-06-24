@@ -19,9 +19,12 @@ import {
 } from '@nestjs/swagger';
 import { CreateProgramLevelDto } from './dto/create-program-level.dto';
 import { UpdateProgramLevelDto } from './dto/update-program-level.dto';
+import { Role } from '../../generated/prisma/enums';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { ProgramLevelService } from './program-level.service';
 
 @ApiTags('program-levels')
+@Roles(Role.ADMIN)
 @Controller('program-level')
 export class ProgramLevelController {
   constructor(private readonly programLevelService: ProgramLevelService) {}
