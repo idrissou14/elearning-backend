@@ -22,6 +22,7 @@ import { AuditModule } from './audit/audit.module';
 import { ConsistencyModule } from './consistency/consistency.module';
 import { LmsModule } from './lms/lms.module';
 import { StudentModule } from './student/student.module';
+import { TeacherModule } from './teacher/teacher.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { StudentModule } from './student/student.module';
     ConsistencyModule,
     LmsModule,
     StudentModule,
+    TeacherModule,
   ],
   controllers: [AppController],
   providers: [AppService],
