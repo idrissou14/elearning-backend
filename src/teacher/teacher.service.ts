@@ -90,13 +90,29 @@ export class TeacherService {
       throw new NotFoundException('No content has been published for this course');
     }
 
-    const [content, quizzes] = await Promise.all([
+    // The authoritative quiz link is Evaluation.quizRef (Postgres), not the
+    // quiz's courseId — so we never surface stale/orphaned quiz documents.
+    const [content, evaluations] = await Promise.all([
       this.courseContentModel.findById(instance.contentRef).lean(),
-      this.quizModel.find({ courseId: instance.contentRef }).lean(),
+      this.prisma.evaluation.findMany({
+        where: { courseInstanceId: instance.id, quizRef: { not: null } },
+        select: { quizRef: true },
+      }),
     ]);
     if (!content) {
       throw new NotFoundException('Course content document not found');
     }
+
+    const quizRefs = [
+      ...new Set(
+        evaluations
+          .map((e) => e.quizRef)
+          .filter((ref): ref is string => ref != null),
+      ),
+    ];
+    const quizzes = quizRefs.length
+      ? await this.quizModel.find({ _id: { $in: quizRefs } }).lean()
+      : [];
 
     return {
       courseInstance: {
