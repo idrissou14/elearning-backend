@@ -1,9 +1,19 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import {
+  CourseContent,
+  CourseContentDocument,
+} from '../mongodb/schemas/course-content.schema';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class TeacherService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @InjectModel(CourseContent.name)
+    private readonly courseContentModel: Model<CourseContentDocument>,
+  ) {}
 
   /**
    * Course instances the given teacher is assigned to (via CourseTeacher),
@@ -41,5 +51,61 @@ export class TeacherService {
         programName: instance.classGroup.programLevel.program.name,
       };
     });
+  }
+
+  /**
+   * Read-only view of the LMS content the teacher published for one of their
+   * course instances. Unlike the student-facing GET /cours-instance/:id/content,
+   * this does NOT require enrollment and carries no learner progression — it is
+   * gated solely on the teacher being assigned to the instance (CourseTeacher).
+   *
+   * 403 if the teacher is not assigned to the instance.
+   * 404 if no content has been published yet.
+   */
+  async getCourseContent(teacherId: string, courseInstanceId: string) {
+    const assignment = await this.prisma.courseTeacher.findFirst({
+      where: { teacherId, courseInstanceId },
+      include: {
+        courseInstance: {
+          include: {
+            curriculumCourse: true,
+            classGroup: {
+              include: { programLevel: { include: { program: true } } },
+            },
+          },
+        },
+      },
+    });
+
+    // Don't leak the existence of instances this teacher isn't assigned to.
+    if (!assignment) {
+      throw new ForbiddenException('COURSE_ACCESS_DENIED');
+    }
+
+    const instance = assignment.courseInstance;
+    if (!instance.contentRef) {
+      throw new NotFoundException('No content has been published for this course');
+    }
+
+    const content = await this.courseContentModel
+      .findById(instance.contentRef)
+      .lean();
+    if (!content) {
+      throw new NotFoundException('Course content document not found');
+    }
+
+    return {
+      courseInstance: {
+        id: instance.id,
+        role: assignment.role,
+        academicYear: instance.academicYear,
+        courseName: instance.curriculumCourse.name,
+        courseCode: instance.curriculumCourse.code,
+        classGroupName: instance.classGroup.name,
+        levelName: instance.classGroup.programLevel.levelName,
+        programName: instance.classGroup.programLevel.program.name,
+      },
+      content,
+    };
   }
 }
