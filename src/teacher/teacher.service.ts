@@ -5,6 +5,7 @@ import {
   CourseContent,
   CourseContentDocument,
 } from '../mongodb/schemas/course-content.schema';
+import { Quiz, QuizDocument } from '../mongodb/schemas/quiz.schema';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -13,6 +14,8 @@ export class TeacherService {
     private readonly prisma: PrismaService,
     @InjectModel(CourseContent.name)
     private readonly courseContentModel: Model<CourseContentDocument>,
+    @InjectModel(Quiz.name)
+    private readonly quizModel: Model<QuizDocument>,
   ) {}
 
   /**
@@ -87,9 +90,10 @@ export class TeacherService {
       throw new NotFoundException('No content has been published for this course');
     }
 
-    const content = await this.courseContentModel
-      .findById(instance.contentRef)
-      .lean();
+    const [content, quizzes] = await Promise.all([
+      this.courseContentModel.findById(instance.contentRef).lean(),
+      this.quizModel.find({ courseId: instance.contentRef }).lean(),
+    ]);
     if (!content) {
       throw new NotFoundException('Course content document not found');
     }
@@ -106,6 +110,7 @@ export class TeacherService {
         programName: instance.classGroup.programLevel.program.name,
       },
       content,
+      quizzes,
     };
   }
 }

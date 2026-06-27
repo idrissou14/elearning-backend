@@ -12,6 +12,7 @@ import {
   LearnerProgress,
   LearnerProgressDocument,
 } from '../mongodb/schemas/learner-progress.schema';
+import { Quiz, QuizDocument } from '../mongodb/schemas/quiz.schema';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCourseContentDto } from './dto/create-course-content.dto';
 
@@ -25,6 +26,8 @@ export class LmsContentService {
     private readonly courseContentModel: Model<CourseContentDocument>,
     @InjectModel(LearnerProgress.name)
     private readonly learnerProgressModel: Model<LearnerProgressDocument>,
+    @InjectModel(Quiz.name)
+    private readonly quizModel: Model<QuizDocument>,
   ) {}
 
   /** SAGA-01 — create (or update) the LMS content of a course instance. */
@@ -57,11 +60,13 @@ export class LmsContentService {
       throw new NotFoundException('No content has been published for this course');
     }
 
-    const [content, progress] = await Promise.all([
+    const [content, progress, quizzes] = await Promise.all([
       this.courseContentModel.findById(instance.contentRef).lean(),
       this.learnerProgressModel
         .findOne({ userId, courseId: instance.contentRef })
         .lean(),
+      // Quizzes attached to this course (REF-09: quiz.courseId → content._id).
+      this.quizModel.find({ courseId: instance.contentRef }).lean(),
     ]);
 
     if (!content) {
@@ -77,6 +82,7 @@ export class LmsContentService {
       },
       content,
       progress: progress ?? null,
+      quizzes,
     };
   }
 }
