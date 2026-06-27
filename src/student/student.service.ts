@@ -99,4 +99,49 @@ export class StudentService {
       certificates,
     };
   }
+
+  /**
+   * Course instances the student can access: those attached to the class
+   * groups of their ACTIVE enrollments. `hasContent` mirrors the access the
+   * student gets from GET /cours-instance/:id/content (which itself requires
+   * an ACTIVE enrollment), so the list and the reader stay consistent.
+   */
+  async getCourses(userId: string) {
+    const enrollments = await this.prisma.enrollment.findMany({
+      where: { userId, status: EnrollmentStatus.ACTIVE },
+      select: { classGroupId: true },
+    });
+    const classGroupIds = enrollments.map((e) => e.classGroupId);
+    if (classGroupIds.length === 0) return [];
+
+    const instances = await this.prisma.courseInstance.findMany({
+      where: { classGroupId: { in: classGroupIds } },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        curriculumCourse: true,
+        classGroup: {
+          include: { programLevel: { include: { program: true } } },
+        },
+        teachers: { include: { teacher: true } },
+      },
+    });
+
+    return instances.map((i) => {
+      const main =
+        i.teachers.find((t) => t.role === 'MAIN_TEACHER') ?? i.teachers[0];
+      return {
+        id: i.id,
+        academicYear: i.academicYear,
+        hasContent: i.contentRef != null,
+        courseName: i.curriculumCourse.name,
+        courseCode: i.curriculumCourse.code,
+        classGroupName: i.classGroup.name,
+        levelName: i.classGroup.programLevel.levelName,
+        programName: i.classGroup.programLevel.program.name,
+        teacherName: main
+          ? `${main.teacher.firstName} ${main.teacher.lastName}`
+          : null,
+      };
+    });
+  }
 }

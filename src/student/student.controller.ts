@@ -18,4 +18,12 @@ export class StudentController {
   getOverview(@CurrentUser('id') userId: string) {
     return this.studentService.getOverview(userId);
   }
+
+  @Get('me/courses')
+  @ApiOkResponse({
+    description: 'Courses accessible to the current student (active enrollments)',
+  })
+  getCourses(@CurrentUser('id') userId: string) {
+    return this.studentService.getCourses(userId);
+  }
 }
