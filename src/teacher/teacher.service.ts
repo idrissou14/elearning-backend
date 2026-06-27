@@ -90,12 +90,14 @@ export class TeacherService {
       throw new NotFoundException('No content has been published for this course');
     }
 
-    // The authoritative quiz link is Evaluation.quizRef (Postgres), not the
-    // quiz's courseId — so we never surface stale/orphaned quiz documents.
-    const [content, evaluations] = await Promise.all([
+    // Only the most recently attached quiz is surfaced. The authoritative link
+    // is Evaluation.quizRef (Postgres); taking the newest one avoids stale
+    // quizzes left by earlier publishes.
+    const [content, latestEvaluation] = await Promise.all([
       this.courseContentModel.findById(instance.contentRef).lean(),
-      this.prisma.evaluation.findMany({
+      this.prisma.evaluation.findFirst({
         where: { courseInstanceId: instance.id, quizRef: { not: null } },
+        orderBy: { createdAt: 'desc' },
         select: { quizRef: true },
       }),
     ]);
@@ -103,16 +105,10 @@ export class TeacherService {
       throw new NotFoundException('Course content document not found');
     }
 
-    const quizRefs = [
-      ...new Set(
-        evaluations
-          .map((e) => e.quizRef)
-          .filter((ref): ref is string => ref != null),
-      ),
-    ];
-    const quizzes = quizRefs.length
-      ? await this.quizModel.find({ _id: { $in: quizRefs } }).lean()
-      : [];
+    const quiz = latestEvaluation?.quizRef
+      ? await this.quizModel.findById(latestEvaluation.quizRef).lean()
+      : null;
+    const quizzes = quiz ? [quiz] : [];
 
     return {
       courseInstance: {
