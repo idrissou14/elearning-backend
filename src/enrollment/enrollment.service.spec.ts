@@ -4,7 +4,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { EnrollmentStatus, Role } from '../../generated/prisma/enums';
+import {
+  EnrollmentStatus,
+  EnrollmentType,
+  Role,
+} from '../../generated/prisma/enums';
 import { ClassGroupService } from '../class-group/class-group.service';
 import { CrossDbConsistencyService } from '../consistency/cross-db-consistency.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -20,11 +24,17 @@ const mockPrisma = {
     update: jest.fn(),
     delete: jest.fn(),
   },
+  courseInstance: {
+    findUnique: jest.fn(),
+  },
 };
 
 const mockUserService = { findOne: jest.fn() };
 const mockClassGroupService = { findOne: jest.fn() };
-const mockCrossDb = { initEnrollmentProgress: jest.fn() };
+const mockCrossDb = {
+  initEnrollmentProgress: jest.fn(),
+  initCourseProgress: jest.fn(),
+};
 
 describe('EnrollmentService', () => {
   let service: EnrollmentService;
@@ -59,7 +69,9 @@ describe('EnrollmentService', () => {
     it('throws NotFoundException when missing', async () => {
       mockPrisma.enrollment.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('missing')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -67,7 +79,10 @@ describe('EnrollmentService', () => {
     const dto = { userId: 'u1', classGroupId: 'g1', academicYear: '2025-2026' };
 
     it('enrolls a student when user is a student, group exists and no duplicate', async () => {
-      mockUserService.findOne.mockResolvedValue({ id: 'u1', role: Role.STUDENT });
+      mockUserService.findOne.mockResolvedValue({
+        id: 'u1',
+        role: Role.STUDENT,
+      });
       mockClassGroupService.findOne.mockResolvedValue({ id: 'g1' });
       mockPrisma.enrollment.findFirst.mockResolvedValue(null);
       mockPrisma.enrollment.create.mockResolvedValue({ id: '1', ...dto });
@@ -75,11 +90,23 @@ describe('EnrollmentService', () => {
       await expect(service.create(dto)).resolves.toEqual({ id: '1', ...dto });
       expect(mockUserService.findOne).toHaveBeenCalledWith('u1');
       expect(mockClassGroupService.findOne).toHaveBeenCalledWith('g1');
-      expect(mockPrisma.enrollment.create).toHaveBeenCalledWith({ data: dto });
+      expect(mockPrisma.enrollment.create).toHaveBeenCalledWith({
+        data: {
+          userId: 'u1',
+          type: EnrollmentType.CURSUS,
+          classGroupId: 'g1',
+          academicYear: '2025-2026',
+          status: undefined,
+          previousEnrollmentId: undefined,
+        },
+      });
     });
 
     it('triggers SAGA-03 progress init for an active enrollment', async () => {
-      mockUserService.findOne.mockResolvedValue({ id: 'u1', role: Role.STUDENT });
+      mockUserService.findOne.mockResolvedValue({
+        id: 'u1',
+        role: Role.STUDENT,
+      });
       mockClassGroupService.findOne.mockResolvedValue({ id: 'g1' });
       mockPrisma.enrollment.findFirst.mockResolvedValue(null);
       mockPrisma.enrollment.create.mockResolvedValue({
@@ -97,15 +124,92 @@ describe('EnrollmentService', () => {
     });
 
     it('throws BadRequestException when the user is not a student', async () => {
-      mockUserService.findOne.mockResolvedValue({ id: 'u1', role: Role.TEACHER });
+      mockUserService.findOne.mockResolvedValue({
+        id: 'u1',
+        role: Role.TEACHER,
+      });
 
       await expect(service.create(dto)).rejects.toThrow(BadRequestException);
       expect(mockClassGroupService.findOne).not.toHaveBeenCalled();
       expect(mockPrisma.enrollment.create).not.toHaveBeenCalled();
     });
 
+    describe('RENFORCEMENT', () => {
+      const reinf = {
+        userId: 'u1',
+        type: EnrollmentType.RENFORCEMENT,
+        courseInstanceId: 'ci1',
+      };
+
+      it('enrolls in a single course, deriving the academic year from it', async () => {
+        mockUserService.findOne.mockResolvedValue({
+          id: 'u1',
+          role: Role.STUDENT,
+        });
+        mockPrisma.courseInstance.findUnique.mockResolvedValue({
+          id: 'ci1',
+          academicYear: '2025-2026',
+        });
+        mockPrisma.enrollment.findFirst.mockResolvedValue(null);
+        mockPrisma.enrollment.create.mockResolvedValue({
+          id: '2',
+          ...reinf,
+          academicYear: '2025-2026',
+          status: EnrollmentStatus.ACTIVE,
+        });
+
+        await service.create(reinf);
+
+        expect(mockClassGroupService.findOne).not.toHaveBeenCalled();
+        expect(mockPrisma.enrollment.create).toHaveBeenCalledWith({
+          data: {
+            userId: 'u1',
+            type: EnrollmentType.RENFORCEMENT,
+            courseInstanceId: 'ci1',
+            academicYear: '2025-2026',
+            status: undefined,
+            previousEnrollmentId: undefined,
+          },
+        });
+        expect(mockCrossDb.initCourseProgress).toHaveBeenCalledWith({
+          userId: 'u1',
+          courseInstanceId: 'ci1',
+        });
+        expect(mockCrossDb.initEnrollmentProgress).not.toHaveBeenCalled();
+      });
+
+      it('propagates NotFoundException when the course instance is missing', async () => {
+        mockUserService.findOne.mockResolvedValue({
+          id: 'u1',
+          role: Role.STUDENT,
+        });
+        mockPrisma.courseInstance.findUnique.mockResolvedValue(null);
+
+        await expect(service.create(reinf)).rejects.toThrow(NotFoundException);
+        expect(mockPrisma.enrollment.create).not.toHaveBeenCalled();
+      });
+
+      it('throws ConflictException when already reinforcing that course', async () => {
+        mockUserService.findOne.mockResolvedValue({
+          id: 'u1',
+          role: Role.STUDENT,
+        });
+        mockPrisma.courseInstance.findUnique.mockResolvedValue({
+          id: 'ci1',
+          academicYear: '2025-2026',
+        });
+        mockPrisma.enrollment.findFirst.mockResolvedValue({ id: '99' });
+
+        await expect(service.create(reinf)).rejects.toThrow(ConflictException);
+        expect(mockPrisma.enrollment.create).not.toHaveBeenCalled();
+      });
+    });
+
     it('propagates NotFoundException when the class group is missing', async () => {
-      mockUserService.findOne.mockResolvedValue({ id: 'u1', role: Role.STUDENT });
+      mockUserService.findOne.mockResolvedValue({
+        id: 'u1',
+        role: Role.STUDENT,
+      });
       mockClassGroupService.findOne.mockRejectedValue(new NotFoundException());
 
       await expect(service.create(dto)).rejects.toThrow(NotFoundException);
@@ -113,7 +217,10 @@ describe('EnrollmentService', () => {
     });
 
     it('validates the previous enrollment when provided', async () => {
-      mockUserService.findOne.mockResolvedValue({ id: 'u1', role: Role.STUDENT });
+      mockUserService.findOne.mockResolvedValue({
+        id: 'u1',
+        role: Role.STUDENT,
+      });
       mockClassGroupService.findOne.mockResolvedValue({ id: 'g1' });
       mockPrisma.enrollment.findUnique.mockResolvedValue({ id: 'prev' }); // previous lookup
       mockPrisma.enrollment.findFirst.mockResolvedValue(null);
@@ -126,7 +233,10 @@ describe('EnrollmentService', () => {
     });
 
     it('throws ConflictException when the user is already enrolled that year', async () => {
-      mockUserService.findOne.mockResolvedValue({ id: 'u1', role: Role.STUDENT });
+      mockUserService.findOne.mockResolvedValue({
+        id: 'u1',
+        role: Role.STUDENT,
+      });
       mockClassGroupService.findOne.mockResolvedValue({ id: 'g1' });
       mockPrisma.enrollment.findFirst.mockResolvedValue({ id: '99' });
 
@@ -157,7 +267,12 @@ describe('EnrollmentService', () => {
     });
 
     it('updates the status of an existing enrollment', async () => {
-      const current = { id: '1', userId: 'u1', academicYear: '2025-2026' };
+      const current = {
+        id: '1',
+        userId: 'u1',
+        type: EnrollmentType.CURSUS,
+        academicYear: '2025-2026',
+      };
       mockPrisma.enrollment.findUnique.mockResolvedValue(current);
       mockPrisma.enrollment.findFirst.mockResolvedValue(current); // same record
       mockPrisma.enrollment.update.mockResolvedValue({
@@ -179,13 +294,17 @@ describe('EnrollmentService', () => {
       mockPrisma.enrollment.delete.mockResolvedValue({ id: '1' });
 
       await service.remove('1');
-      expect(mockPrisma.enrollment.delete).toHaveBeenCalledWith({ where: { id: '1' } });
+      expect(mockPrisma.enrollment.delete).toHaveBeenCalledWith({
+        where: { id: '1' },
+      });
     });
 
     it('throws NotFoundException when deleting a missing enrollment', async () => {
       mockPrisma.enrollment.findUnique.mockResolvedValue(null);
 
-      await expect(service.remove('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.remove('missing')).rejects.toThrow(
+        NotFoundException,
+      );
       expect(mockPrisma.enrollment.delete).not.toHaveBeenCalled();
     });
   });

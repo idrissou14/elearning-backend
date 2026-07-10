@@ -55,7 +55,8 @@ export class CrossDbConsistencyService {
     private readonly quizModel: Model<QuizDocument>,
     @InjectModel(LearnerProgress.name)
     private readonly learnerProgressModel: Model<LearnerProgressDocument>,
-    @InjectQueue(RECONCILIATION_QUEUE) private readonly reconciliationQueue: Queue,
+    @InjectQueue(RECONCILIATION_QUEUE)
+    private readonly reconciliationQueue: Queue,
     @InjectQueue(GDPR_ERASE_QUEUE) private readonly gdprQueue: Queue,
   ) {}
 
@@ -64,12 +65,17 @@ export class CrossDbConsistencyService {
    * Mongo first (app-generated UUID), then write the ref into Postgres;
    * compensate by deleting the Mongo document if the Postgres write fails.
    */
-  async createCourseContent(courseInstanceId: string, input: CreateCourseContentInput) {
+  async createCourseContent(
+    courseInstanceId: string,
+    input: CreateCourseContentInput,
+  ) {
     const instance = await this.prisma.courseInstance.findUnique({
       where: { id: courseInstanceId },
     });
     if (!instance) {
-      throw new NotFoundException(`Course instance ${courseInstanceId} not found`);
+      throw new NotFoundException(
+        `Course instance ${courseInstanceId} not found`,
+      );
     }
 
     // Idempotency: content already linked → update it in place instead of recreating.
@@ -88,7 +94,9 @@ export class CrossDbConsistencyService {
         data: { contentRef: _id },
       });
     } catch (err) {
-      await this.compensate(() => this.courseContentModel.deleteOne({ _id }).exec());
+      await this.compensate(() =>
+        this.courseContentModel.deleteOne({ _id }).exec(),
+      );
       throw err;
     }
 
@@ -120,7 +128,11 @@ export class CrossDbConsistencyService {
     }
 
     const _id = randomUUID();
-    const created = await this.quizModel.create({ _id, courseId: contentRef, ...input });
+    const created = await this.quizModel.create({
+      _id,
+      courseId: contentRef,
+      ...input,
+    });
 
     try {
       await this.prisma.evaluation.update({
@@ -145,7 +157,10 @@ export class CrossDbConsistencyService {
     classGroupId: string;
   }) {
     const instances = await this.prisma.courseInstance.findMany({
-      where: { classGroupId: enrollment.classGroupId, contentRef: { not: null } },
+      where: {
+        classGroupId: enrollment.classGroupId,
+        contentRef: { not: null },
+      },
       select: { contentRef: true },
     });
 
@@ -178,6 +193,49 @@ export class CrossDbConsistencyService {
   }
 
   /**
+   * SAGA-03 (course-scoped) — Initialise learner progress for a single
+   * CourseInstance, used by RENFORCEMENT enrollments. Same non-blocking
+   * contract as {@link initEnrollmentProgress}: a Mongo failure is queued for
+   * reconciliation rather than rolling back the enrollment.
+   */
+  async initCourseProgress(input: {
+    userId: string;
+    courseInstanceId: string;
+  }) {
+    const instance = await this.prisma.courseInstance.findUnique({
+      where: { id: input.courseInstanceId },
+      select: { contentRef: true, classGroupId: true },
+    });
+    // No content published yet → nothing to seed; progress is created lazily.
+    if (!instance?.contentRef) return;
+    const { contentRef, classGroupId } = instance;
+
+    try {
+      await this.learnerProgressModel.updateOne(
+        { userId: input.userId, courseId: contentRef },
+        {
+          $setOnInsert: {
+            userId: input.userId,
+            courseId: contentRef,
+            classGroupId,
+            modules: [],
+          },
+        },
+        { upsert: true },
+      );
+    } catch (err) {
+      this.logger.warn(
+        `Progress init failed for ${input.userId}/${contentRef}, queuing retry: ${(err as Error).message}`,
+      );
+      await this.reconciliationQueue.add(PROGRESS_RETRY_JOB, {
+        userId: input.userId,
+        courseId: contentRef,
+        classGroupId,
+      });
+    }
+  }
+
+  /**
    * SAGA-04 — Request GDPR erasure of a user.
    * Soft-deletes + anonymizes the Postgres user, then enqueues an idempotent
    * BullMQ job (fixed jobId) to anonymize the linked Mongo documents.
@@ -200,7 +258,11 @@ export class CrossDbConsistencyService {
     await this.gdprQueue.add(
       GDPR_ERASE_JOB,
       { userId, actorEmailSnapshot },
-      { jobId: `gdpr-${userId}`, attempts: 5, backoff: { type: 'exponential', delay: 1000 } },
+      {
+        jobId: `gdpr-${userId}`,
+        attempts: 5,
+        backoff: { type: 'exponential', delay: 1000 },
+      },
     );
 
     return { userId, status: 'erasure_scheduled' as const };

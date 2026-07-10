@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { EnrollmentStatus } from '../../generated/prisma/enums';
+import { EnrollmentStatus, EnrollmentType } from '../../generated/prisma/enums';
 import { EnrollmentController } from './enrollment.controller';
 import { EnrollmentService } from './enrollment.service';
 
@@ -32,13 +32,22 @@ describe('EnrollmentController', () => {
     const list = [{ id: '1' }];
     mockService.findAll.mockReturnValue(list);
 
-    expect(controller.findAll('u1', 'g1', '2025-2026', EnrollmentStatus.ACTIVE)).toBe(
-      list,
-    );
+    expect(
+      controller.findAll(
+        'u1',
+        'g1',
+        'ci1',
+        '2025-2026',
+        EnrollmentType.CURSUS,
+        EnrollmentStatus.ACTIVE,
+      ),
+    ).toBe(list);
     expect(mockService.findAll).toHaveBeenCalledWith({
       userId: 'u1',
       classGroupId: 'g1',
+      courseInstanceId: 'ci1',
       academicYear: '2025-2026',
+      type: EnrollmentType.CURSUS,
       status: EnrollmentStatus.ACTIVE,
     });
   });

@@ -42,6 +42,11 @@ enum EnrollmentStatus {
   FAILED
 }
 
+enum EnrollmentType {
+  CURSUS // inscription pleine à un ClassGroup (toute la promo)
+  RENFORCEMENT // inscription à une seule matière (CourseInstance)
+}
+
 enum CourseTeacherRole {
   MAIN_TEACHER
   ASSISTANT
@@ -156,6 +161,7 @@ model CourseInstance {
   classGroup       ClassGroup       @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
   teachers         CourseTeacher[]
   evaluations      Evaluation[]
+  enrollments      Enrollment[] // inscriptions RENFORCEMENT ciblant cette matière
 
   @@unique([curriculumCourseId, classGroupId, academicYear])
   @@index([classGroupId])
@@ -228,22 +234,29 @@ model Session {
 model Enrollment {
   id                   String           @id @default(uuid())
   userId               String           @map("user_id")
-  classGroupId         String           @map("class_group_id")
+  type                 EnrollmentType   @default(CURSUS)
+  // CURSUS → classGroupId renseigné ; RENFORCEMENT → courseInstanceId renseigné.
+  classGroupId         String?          @map("class_group_id")
+  courseInstanceId     String?          @map("course_instance_id")
   academicYear         String           @map("academic_year")
   status               EnrollmentStatus @default(ACTIVE)
   enrolledAt           DateTime         @default(now()) @map("enrolled_at")
   previousEnrollmentId String?          @map("previous_enrollment_id")
 
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  classGroup   ClassGroup    @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
-  grades       Grade[]
-  certificates Certificate[]
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  classGroup     ClassGroup?     @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
+  courseInstance CourseInstance? @relation(fields: [courseInstanceId], references: [id], onDelete: Cascade)
+  grades         Grade[]
+  certificates   Certificate[]
 
   previousEnrollment Enrollment?  @relation("EnrollmentHistory", fields: [previousEnrollmentId], references: [id])
   nextEnrollments    Enrollment[] @relation("EnrollmentHistory")
 
-  @@unique([userId, academicYear])
+  // Unicité CURSUS (1 par étudiant et par année) portée par un index partiel
+  // en SQL brut dans la migration — Prisma ne sait pas exprimer `WHERE type`.
+  @@unique([userId, courseInstanceId]) // au plus 1 renforcement par matière
   @@index([classGroupId])
+  @@index([courseInstanceId])
   @@index([academicYear])
   @@map("enrollments")
 }

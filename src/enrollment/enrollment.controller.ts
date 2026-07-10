@@ -18,7 +18,11 @@ import {
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { EnrollmentStatus, Role } from '../../generated/prisma/enums';
+import {
+  EnrollmentStatus,
+  EnrollmentType,
+  Role,
+} from '../../generated/prisma/enums';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
 import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
@@ -35,13 +39,17 @@ export class EnrollmentController {
   findAll(
     @Query('userId') userId?: string,
     @Query('classGroupId') classGroupId?: string,
+    @Query('courseInstanceId') courseInstanceId?: string,
     @Query('academicYear') academicYear?: string,
+    @Query('type') type?: EnrollmentType,
     @Query('status') status?: EnrollmentStatus,
   ) {
     return this.enrollmentService.findAll({
       userId,
       classGroupId,
+      courseInstanceId,
       academicYear,
+      type,
       status,
     });
   }
@@ -56,7 +64,9 @@ export class EnrollmentController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiCreatedResponse({ description: 'Student enrolled' })
-  @ApiNotFoundResponse({ description: 'User, class group or previous enrollment not found' })
+  @ApiNotFoundResponse({
+    description: 'User, class group or previous enrollment not found',
+  })
   @ApiBadRequestResponse({ description: 'User is not a student' })
   create(@Body() dto: CreateEnrollmentDto) {
     return this.enrollmentService.create(dto);
@@ -64,7 +74,9 @@ export class EnrollmentController {
 
   @Patch(':id')
   @ApiOkResponse({ description: 'Enrollment updated' })
-  @ApiNotFoundResponse({ description: 'Enrollment or related resource not found' })
+  @ApiNotFoundResponse({
+    description: 'Enrollment or related resource not found',
+  })
   @ApiBadRequestResponse({ description: 'Invalid update' })
   update(@Param('id') id: string, @Body() dto: UpdateEnrollmentDto) {
     return this.enrollmentService.update(id, dto);

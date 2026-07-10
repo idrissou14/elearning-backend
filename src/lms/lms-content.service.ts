@@ -50,14 +50,22 @@ export class LmsContentService {
       include: { classGroup: true, curriculumCourse: true },
     });
     if (!instance) {
-      throw new NotFoundException(`Course instance ${courseInstanceId} not found`);
+      throw new NotFoundException(
+        `Course instance ${courseInstanceId} not found`,
+      );
     }
 
-    // Tenant isolation: the user must be enrolled in this class group → else 403.
-    await this.existence.assertEnrollmentAccess(userId, instance.classGroupId);
+    // Tenant isolation: the user must have access to this course instance
+    // (via a CURSUS enrollment in its class group, or a RENFORCEMENT on it).
+    await this.existence.assertEnrollmentAccess(userId, {
+      id: instance.id,
+      classGroupId: instance.classGroupId,
+    });
 
     if (!instance.contentRef) {
-      throw new NotFoundException('No content has been published for this course');
+      throw new NotFoundException(
+        'No content has been published for this course',
+      );
     }
 
     const [content, progress, latestEvaluation] = await Promise.all([

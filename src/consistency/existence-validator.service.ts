@@ -48,7 +48,8 @@ export class ExistenceValidatorService {
       where: { id: classGroupId },
       select: { id: true },
     });
-    if (!group) throw new NotFoundException(`Class group ${classGroupId} not found`);
+    if (!group)
+      throw new NotFoundException(`Class group ${classGroupId} not found`);
     return group;
   }
 
@@ -67,12 +68,25 @@ export class ExistenceValidatorService {
   }
 
   /**
-   * Tenant isolation (REF-07): the user must hold an active enrollment in the
-   * class group before reading content / forum / progress. Throws 403 otherwise.
+   * Tenant isolation (REF-07): the user must hold an active enrollment covering
+   * this course instance before reading content / forum / progress. Access is
+   * granted by either a CURSUS enrollment in the owning class group, or a
+   * RENFORCEMENT enrollment targeting this very course instance. Throws 403
+   * otherwise.
    */
-  async assertEnrollmentAccess(userId: string, classGroupId: string) {
+  async assertEnrollmentAccess(
+    userId: string,
+    courseInstance: { id: string; classGroupId: string },
+  ) {
     const enrollment = await this.prisma.enrollment.findFirst({
-      where: { userId, classGroupId, status: 'ACTIVE' },
+      where: {
+        userId,
+        status: 'ACTIVE',
+        OR: [
+          { classGroupId: courseInstance.classGroupId },
+          { courseInstanceId: courseInstance.id },
+        ],
+      },
       select: { id: true },
     });
     if (!enrollment) {

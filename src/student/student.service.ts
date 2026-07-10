@@ -22,6 +22,15 @@ export class StudentService {
         classGroup: {
           include: { programLevel: { include: { program: true } } },
         },
+        // Renforcement : la promo est portée par la matière, pas par l'inscription.
+        courseInstance: {
+          include: {
+            curriculumCourse: true,
+            classGroup: {
+              include: { programLevel: { include: { program: true } } },
+            },
+          },
+        },
         grades: {
           orderBy: { gradedAt: 'desc' },
           include: {
@@ -36,15 +45,22 @@ export class StudentService {
       },
     });
 
-    const enrollmentDtos = enrollments.map((e) => ({
-      id: e.id,
-      academicYear: e.academicYear,
-      status: e.status,
-      enrolledAt: e.enrolledAt,
-      classGroupName: e.classGroup.name,
-      levelName: e.classGroup.programLevel.levelName,
-      programName: e.classGroup.programLevel.program.name,
-    }));
+    const enrollmentDtos = enrollments.map((e) => {
+      // CURSUS → promo directe ; RENFORCEMENT → promo de la matière.
+      const classGroup = e.classGroup ?? e.courseInstance?.classGroup ?? null;
+      return {
+        id: e.id,
+        type: e.type,
+        academicYear: e.academicYear,
+        status: e.status,
+        enrolledAt: e.enrolledAt,
+        classGroupName: classGroup?.name ?? null,
+        levelName: classGroup?.programLevel.levelName ?? null,
+        programName: classGroup?.programLevel.program.name ?? null,
+        // Renseigné uniquement pour un renforcement (matière ciblée).
+        courseName: e.courseInstance?.curriculumCourse.name ?? null,
+      };
+    });
 
     const grades = enrollments.flatMap((e) =>
       e.grades.map((g) => {
@@ -65,16 +81,18 @@ export class StudentService {
       }),
     );
 
-    const certificates = enrollments.flatMap((e) =>
-      e.certificates.map((c) => ({
+    const certificates = enrollments.flatMap((e) => {
+      const classGroup = e.classGroup ?? e.courseInstance?.classGroup ?? null;
+      return e.certificates.map((c) => ({
         id: c.id,
         verifyToken: c.verifyToken,
         issuedAt: c.issuedAt,
         academicYear: e.academicYear,
-        programName: e.classGroup.programLevel.program.name,
-        levelName: e.classGroup.programLevel.levelName,
-      })),
-    );
+        programName: classGroup?.programLevel.program.name ?? null,
+        levelName: classGroup?.programLevel.levelName ?? null,
+        courseName: e.courseInstance?.curriculumCourse.name ?? null,
+      }));
+    });
 
     const averageOn20 = grades.length
       ? round2(grades.reduce((sum, g) => sum + g.scoreOn20, 0) / grades.length)
@@ -109,13 +127,28 @@ export class StudentService {
   async getCourses(userId: string) {
     const enrollments = await this.prisma.enrollment.findMany({
       where: { userId, status: EnrollmentStatus.ACTIVE },
-      select: { classGroupId: true },
+      select: { classGroupId: true, courseInstanceId: true },
     });
-    const classGroupIds = enrollments.map((e) => e.classGroupId);
-    if (classGroupIds.length === 0) return [];
+    // CURSUS → toutes les matières de la promo ; RENFORCEMENT → la matière ciblée.
+    const classGroupIds = enrollments
+      .map((e) => e.classGroupId)
+      .filter((id): id is string => id != null);
+    const courseInstanceIds = enrollments
+      .map((e) => e.courseInstanceId)
+      .filter((id): id is string => id != null);
+    if (classGroupIds.length === 0 && courseInstanceIds.length === 0) return [];
 
     const instances = await this.prisma.courseInstance.findMany({
-      where: { classGroupId: { in: classGroupIds } },
+      where: {
+        OR: [
+          ...(classGroupIds.length
+            ? [{ classGroupId: { in: classGroupIds } }]
+            : []),
+          ...(courseInstanceIds.length
+            ? [{ id: { in: courseInstanceIds } }]
+            : []),
+        ],
+      },
       orderBy: { createdAt: 'desc' },
       include: {
         curriculumCourse: true,

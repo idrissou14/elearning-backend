@@ -27,7 +27,10 @@ describe('ExistenceValidatorService', () => {
       providers: [
         ExistenceValidatorService,
         { provide: PrismaService, useValue: mockPrisma },
-        { provide: getModelToken(CourseContent.name), useValue: courseContentModel },
+        {
+          provide: getModelToken(CourseContent.name),
+          useValue: courseContentModel,
+        },
         { provide: getModelToken(Quiz.name), useValue: quizModel },
       ],
     }).compile();
@@ -38,7 +41,10 @@ describe('ExistenceValidatorService', () => {
 
   describe('assertUserExists', () => {
     it('returns the user when found', async () => {
-      mockPrisma.user.findFirst.mockResolvedValue({ id: 'u1', role: Role.STUDENT });
+      mockPrisma.user.findFirst.mockResolvedValue({
+        id: 'u1',
+        role: Role.STUDENT,
+      });
       await expect(service.assertUserExists('u1')).resolves.toEqual({
         id: 'u1',
         role: Role.STUDENT,
@@ -47,11 +53,16 @@ describe('ExistenceValidatorService', () => {
 
     it('throws NotFound when missing', async () => {
       mockPrisma.user.findFirst.mockResolvedValue(null);
-      await expect(service.assertUserExists('u1')).rejects.toThrow(NotFoundException);
+      await expect(service.assertUserExists('u1')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('throws BadRequest when requireStudent and role is not STUDENT', async () => {
-      mockPrisma.user.findFirst.mockResolvedValue({ id: 'u1', role: Role.TEACHER });
+      mockPrisma.user.findFirst.mockResolvedValue({
+        id: 'u1',
+        role: Role.TEACHER,
+      });
       await expect(service.assertUserExists('u1', true)).rejects.toThrow(
         BadRequestException,
       );
@@ -61,14 +72,18 @@ describe('ExistenceValidatorService', () => {
   describe('assertClassGroupExists', () => {
     it('throws NotFound when missing', async () => {
       mockPrisma.classGroup.findUnique.mockResolvedValue(null);
-      await expect(service.assertClassGroupExists('g1')).rejects.toThrow(NotFoundException);
+      await expect(service.assertClassGroupExists('g1')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
   describe('assertCourseContentExists', () => {
     it('passes when the content exists', async () => {
       courseContentModel.exists.mockResolvedValue({ _id: 'cc1' });
-      await expect(service.assertCourseContentExists('cc1')).resolves.toBeUndefined();
+      await expect(
+        service.assertCourseContentExists('cc1'),
+      ).resolves.toBeUndefined();
     });
 
     it('throws NotFound when the content is missing', async () => {
@@ -80,16 +95,20 @@ describe('ExistenceValidatorService', () => {
   });
 
   describe('assertEnrollmentAccess', () => {
+    const instance = { id: 'i1', classGroupId: 'g1' };
+
     it('passes with an active enrollment', async () => {
       mockPrisma.enrollment.findFirst.mockResolvedValue({ id: 'e1' });
-      await expect(service.assertEnrollmentAccess('u1', 'g1')).resolves.toBeUndefined();
+      await expect(
+        service.assertEnrollmentAccess('u1', instance),
+      ).resolves.toBeUndefined();
     });
 
     it('throws Forbidden without an enrollment', async () => {
       mockPrisma.enrollment.findFirst.mockResolvedValue(null);
-      await expect(service.assertEnrollmentAccess('u1', 'g1')).rejects.toThrow(
-        ForbiddenException,
-      );
+      await expect(
+        service.assertEnrollmentAccess('u1', instance),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 });
