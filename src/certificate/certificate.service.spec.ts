@@ -1,6 +1,9 @@
-import { NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { EnrollmentService } from '../enrollment/enrollment.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CertificateService } from './certificate.service';
 
@@ -8,13 +11,38 @@ const mockPrisma = {
   certificate: {
     findMany: jest.fn(),
     findUnique: jest.fn(),
+    findFirst: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
   },
+  enrollment: {
+    findUnique: jest.fn(),
+  },
 };
 
-const mockEnrollmentService = { findOne: jest.fn() };
+const classGroup = {
+  name: 'L1 A',
+  programLevel: { levelName: 'L1', program: { name: 'Informatique' } },
+};
+const enrollmentCursus = {
+  id: 'e1',
+  type: 'CURSUS',
+  status: 'COMPLETED',
+  academicYear: '2025-2026',
+  user: { firstName: 'Awa', lastName: 'Diop' },
+  classGroup,
+  courseInstance: null,
+};
+const enrollmentRenforcement = {
+  id: 'e2',
+  type: 'RENFORCEMENT',
+  status: 'COMPLETED',
+  academicYear: '2025-2026',
+  user: { firstName: 'Awa', lastName: 'Diop' },
+  classGroup: null,
+  courseInstance: { curriculumCourse: { name: 'Algorithmique' }, classGroup },
+};
 
 describe('CertificateService', () => {
   let service: CertificateService;
@@ -24,7 +52,6 @@ describe('CertificateService', () => {
       providers: [
         CertificateService,
         { provide: PrismaService, useValue: mockPrisma },
-        { provide: EnrollmentService, useValue: mockEnrollmentService },
       ],
     }).compile();
 
@@ -37,11 +64,24 @@ describe('CertificateService', () => {
   });
 
   describe('findOne', () => {
-    it('returns the certificate when found', async () => {
-      const cert = { id: '1', enrollmentId: 'e1', s3Path: 'path.pdf' };
-      mockPrisma.certificate.findUnique.mockResolvedValue(cert);
+    it('returns the certificate with its cursus context', async () => {
+      mockPrisma.certificate.findUnique.mockResolvedValue({
+        id: '1',
+        enrollmentId: 'e1',
+        s3Path: 'path.pdf',
+        enrollment: enrollmentCursus,
+      });
 
-      await expect(service.findOne('1')).resolves.toEqual(cert);
+      const result = await service.findOne('1');
+      expect(result).toMatchObject({ id: '1', enrollmentId: 'e1', s3Path: 'path.pdf' });
+      expect(result.context).toEqual({
+        type: 'CURSUS',
+        academicYear: '2025-2026',
+        studentName: 'Awa Diop',
+        programName: 'Informatique',
+        levelName: 'L1',
+        courseName: null,
+      });
     });
 
     it('throws NotFoundException when missing', async () => {
@@ -52,13 +92,21 @@ describe('CertificateService', () => {
   });
 
   describe('verify', () => {
-    it('returns the certificate for a valid token', async () => {
-      const cert = { id: '1', verifyToken: 'tok' };
-      mockPrisma.certificate.findUnique.mockResolvedValue(cert);
+    it('returns the certificate with its matière context for a renforcement', async () => {
+      mockPrisma.certificate.findUnique.mockResolvedValue({
+        id: '1',
+        verifyToken: 'tok',
+        enrollment: enrollmentRenforcement,
+      });
 
-      await expect(service.verify('tok')).resolves.toEqual(cert);
-      expect(mockPrisma.certificate.findUnique).toHaveBeenCalledWith({
-        where: { verifyToken: 'tok' },
+      const result = await service.verify('tok');
+      expect(result.context).toEqual({
+        type: 'RENFORCEMENT',
+        academicYear: '2025-2026',
+        studentName: 'Awa Diop',
+        programName: 'Informatique',
+        levelName: 'L1',
+        courseName: 'Algorithmique',
       });
     });
 
@@ -70,21 +118,41 @@ describe('CertificateService', () => {
   });
 
   describe('create', () => {
-    const dto = { enrollmentId: 'e1', s3Path: 'path.pdf' };
+    const dto = { enrollmentId: 'e2', s3Path: 'path.pdf' };
 
-    it('creates a certificate when the enrollment exists', async () => {
-      mockEnrollmentService.findOne.mockResolvedValue({ id: 'e1' });
+    it('issues a certificate for a COMPLETED enrollment and returns its context', async () => {
+      mockPrisma.enrollment.findUnique.mockResolvedValue(enrollmentRenforcement);
+      mockPrisma.certificate.findFirst.mockResolvedValue(null);
       mockPrisma.certificate.create.mockResolvedValue({ id: '1', ...dto });
 
-      await expect(service.create(dto)).resolves.toEqual({ id: '1', ...dto });
-      expect(mockEnrollmentService.findOne).toHaveBeenCalledWith('e1');
+      const result = await service.create(dto);
+      expect(result).toMatchObject({ id: '1', ...dto });
+      expect(result.context.courseName).toBe('Algorithmique');
       expect(mockPrisma.certificate.create).toHaveBeenCalledWith({ data: dto });
     });
 
-    it('propagates NotFoundException when the enrollment is missing', async () => {
-      mockEnrollmentService.findOne.mockRejectedValue(new NotFoundException());
+    it('throws NotFoundException when the enrollment is missing', async () => {
+      mockPrisma.enrollment.findUnique.mockResolvedValue(null);
 
       await expect(service.create(dto)).rejects.toThrow(NotFoundException);
+      expect(mockPrisma.certificate.create).not.toHaveBeenCalled();
+    });
+
+    it('throws BadRequestException when the enrollment is not COMPLETED', async () => {
+      mockPrisma.enrollment.findUnique.mockResolvedValue({
+        ...enrollmentRenforcement,
+        status: 'ACTIVE',
+      });
+
+      await expect(service.create(dto)).rejects.toThrow(BadRequestException);
+      expect(mockPrisma.certificate.create).not.toHaveBeenCalled();
+    });
+
+    it('throws ConflictException when a certificate already exists', async () => {
+      mockPrisma.enrollment.findUnique.mockResolvedValue(enrollmentRenforcement);
+      mockPrisma.certificate.findFirst.mockResolvedValue({ id: 'existing' });
+
+      await expect(service.create(dto)).rejects.toThrow(ConflictException);
       expect(mockPrisma.certificate.create).not.toHaveBeenCalled();
     });
   });
