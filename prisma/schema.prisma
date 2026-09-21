@@ -242,6 +242,7 @@ model Enrollment {
   status               EnrollmentStatus @default(ACTIVE)
   enrolledAt           DateTime         @default(now()) @map("enrolled_at")
   previousEnrollmentId String?          @map("previous_enrollment_id")
+  progress             Json?            @default("{}") @map("progress")
 
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   classGroup     ClassGroup?     @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
