@@ -36,7 +36,12 @@ export class CreateCurriculumCourseDto {
   @Min(1)
   credits: number;
 
-  @ApiPropertyOptional({ example: 1.5, minimum: 0, maximum: 9.99, default: 1.0 })
+  @ApiPropertyOptional({
+    example: 1.5,
+    minimum: 0,
+    maximum: 9.99,
+    default: 1.0,
+  })
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)

@@ -49,7 +49,8 @@ export class GradeService {
   async update(id: string, dto: UpdateGradeDto) {
     const current = await this.findOne(id);
 
-    if (dto.enrollmentId) await this.enrollmentService.findOne(dto.enrollmentId);
+    if (dto.enrollmentId)
+      await this.enrollmentService.findOne(dto.enrollmentId);
     if (dto.gradedBy) await this.ensureUserCanGrade(dto.gradedBy);
 
     const evaluationId = dto.evaluationId ?? current.evaluationId;
@@ -72,7 +73,9 @@ export class GradeService {
 
   private assertScoreWithinMax(score: number, maxScore: number) {
     if (score > maxScore) {
-      throw new BadRequestException(`score cannot exceed the maximum of ${maxScore}`);
+      throw new BadRequestException(
+        `score cannot exceed the maximum of ${maxScore}`,
+      );
     }
   }
 

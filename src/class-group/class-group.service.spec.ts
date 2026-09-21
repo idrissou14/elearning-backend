@@ -51,7 +51,9 @@ describe('ClassGroupService', () => {
     it('throws NotFoundException when missing', async () => {
       mockPrisma.classGroup.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('missing')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -74,7 +76,9 @@ describe('ClassGroupService', () => {
     });
 
     it('propagates NotFoundException when the program level does not exist', async () => {
-      mockProgramLevelService.findOne.mockRejectedValue(new NotFoundException());
+      mockProgramLevelService.findOne.mockRejectedValue(
+        new NotFoundException(),
+      );
 
       await expect(service.create(dto)).rejects.toThrow(NotFoundException);
       expect(mockPrisma.classGroup.create).not.toHaveBeenCalled();
@@ -82,7 +86,10 @@ describe('ClassGroupService', () => {
 
     it('throws ConflictException for a duplicate name in the same level/year', async () => {
       mockProgramLevelService.findOne.mockResolvedValue({ id: 'pl1' });
-      mockPrisma.classGroup.findFirst.mockResolvedValue({ id: '99', name: 'Groupe A' });
+      mockPrisma.classGroup.findFirst.mockResolvedValue({
+        id: '99',
+        name: 'Groupe A',
+      });
 
       await expect(service.create(dto)).rejects.toThrow(ConflictException);
       expect(mockPrisma.classGroup.create).not.toHaveBeenCalled();
@@ -107,11 +114,18 @@ describe('ClassGroupService', () => {
       };
       mockPrisma.classGroup.findUnique.mockResolvedValue(current);
       mockPrisma.classGroup.findFirst.mockResolvedValue(current); // same record, allowed
-      mockPrisma.classGroup.update.mockResolvedValue({ ...current, status: 'ACTIVE' });
+      mockPrisma.classGroup.update.mockResolvedValue({
+        ...current,
+        status: 'ACTIVE',
+      });
 
       await service.update('1', { status: ClassStatus.ACTIVE });
       expect(mockPrisma.classGroup.findFirst).toHaveBeenCalledWith({
-        where: { programLevelId: 'pl1', name: 'Groupe A', academicYear: '2025-2026' },
+        where: {
+          programLevelId: 'pl1',
+          name: 'Groupe A',
+          academicYear: '2025-2026',
+        },
       });
     });
 
@@ -122,7 +136,10 @@ describe('ClassGroupService', () => {
         name: 'Groupe A',
         academicYear: '2025-2026',
       });
-      mockPrisma.classGroup.findFirst.mockResolvedValue({ id: '2', name: 'Groupe B' });
+      mockPrisma.classGroup.findFirst.mockResolvedValue({
+        id: '2',
+        name: 'Groupe B',
+      });
 
       await expect(service.update('1', { name: 'Groupe B' })).rejects.toThrow(
         ConflictException,
@@ -136,13 +153,17 @@ describe('ClassGroupService', () => {
       mockPrisma.classGroup.delete.mockResolvedValue({ id: '1' });
 
       await service.remove('1');
-      expect(mockPrisma.classGroup.delete).toHaveBeenCalledWith({ where: { id: '1' } });
+      expect(mockPrisma.classGroup.delete).toHaveBeenCalledWith({
+        where: { id: '1' },
+      });
     });
 
     it('throws NotFoundException when deleting a missing group', async () => {
       mockPrisma.classGroup.findUnique.mockResolvedValue(null);
 
-      await expect(service.remove('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.remove('missing')).rejects.toThrow(
+        NotFoundException,
+      );
       expect(mockPrisma.classGroup.delete).not.toHaveBeenCalled();
     });
   });

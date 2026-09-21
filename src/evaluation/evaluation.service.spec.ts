@@ -48,7 +48,9 @@ describe('EvaluationService', () => {
     it('throws NotFoundException when missing', async () => {
       mockPrisma.evaluation.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('missing')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -70,7 +72,9 @@ describe('EvaluationService', () => {
     });
 
     it('propagates NotFoundException when the course instance is missing', async () => {
-      mockCoursInstanceService.findOne.mockRejectedValue(new NotFoundException());
+      mockCoursInstanceService.findOne.mockRejectedValue(
+        new NotFoundException(),
+      );
 
       await expect(service.create(dto)).rejects.toThrow(NotFoundException);
       expect(mockPrisma.evaluation.create).not.toHaveBeenCalled();
@@ -87,16 +91,25 @@ describe('EvaluationService', () => {
     });
 
     it('validates the new course instance when courseInstanceId changes', async () => {
-      mockPrisma.evaluation.findUnique.mockResolvedValue({ id: '1', name: 'Old' });
+      mockPrisma.evaluation.findUnique.mockResolvedValue({
+        id: '1',
+        name: 'Old',
+      });
       mockCoursInstanceService.findOne.mockResolvedValue({ id: 'ci2' });
-      mockPrisma.evaluation.update.mockResolvedValue({ id: '1', courseInstanceId: 'ci2' });
+      mockPrisma.evaluation.update.mockResolvedValue({
+        id: '1',
+        courseInstanceId: 'ci2',
+      });
 
       await service.update('1', { courseInstanceId: 'ci2' });
       expect(mockCoursInstanceService.findOne).toHaveBeenCalledWith('ci2');
     });
 
     it('updates without touching the course instance when it is unchanged', async () => {
-      mockPrisma.evaluation.findUnique.mockResolvedValue({ id: '1', name: 'Old' });
+      mockPrisma.evaluation.findUnique.mockResolvedValue({
+        id: '1',
+        name: 'Old',
+      });
       mockPrisma.evaluation.update.mockResolvedValue({ id: '1', name: 'New' });
 
       await service.update('1', { name: 'New' });
@@ -110,13 +123,17 @@ describe('EvaluationService', () => {
       mockPrisma.evaluation.delete.mockResolvedValue({ id: '1' });
 
       await service.remove('1');
-      expect(mockPrisma.evaluation.delete).toHaveBeenCalledWith({ where: { id: '1' } });
+      expect(mockPrisma.evaluation.delete).toHaveBeenCalledWith({
+        where: { id: '1' },
+      });
     });
 
     it('throws NotFoundException when deleting a missing evaluation', async () => {
       mockPrisma.evaluation.findUnique.mockResolvedValue(null);
 
-      await expect(service.remove('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.remove('missing')).rejects.toThrow(
+        NotFoundException,
+      );
       expect(mockPrisma.evaluation.delete).not.toHaveBeenCalled();
     });
   });

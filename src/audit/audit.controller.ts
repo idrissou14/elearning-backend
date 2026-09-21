@@ -16,7 +16,9 @@ export class AuditController {
   constructor(private readonly auditService: AuditService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List audit logs (read-only, max 200, newest first)' })
+  @ApiOperation({
+    summary: 'List audit logs (read-only, max 200, newest first)',
+  })
   @ApiOkResponse({ description: 'List of audit logs' })
   findAll(
     @Query('actorId') actorId?: string,
@@ -25,7 +27,13 @@ export class AuditController {
     @Query('from') from?: string,
     @Query('to') to?: string,
   ) {
-    return this.auditService.findAll({ actorId, action, resourceType, from, to });
+    return this.auditService.findAll({
+      actorId,
+      action,
+      resourceType,
+      from,
+      to,
+    });
   }
 
   @Get(':id')

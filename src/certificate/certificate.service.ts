@@ -65,7 +65,8 @@ export class CertificateService {
       where: { id },
       include: { enrollment: { include: ENROLLMENT_CONTEXT_INCLUDE } },
     });
-    if (!certificate) throw new NotFoundException(`Certificate ${id} not found`);
+    if (!certificate)
+      throw new NotFoundException(`Certificate ${id} not found`);
     const { enrollment, ...cert } = certificate;
     return { ...cert, context: this.buildContext(enrollment) };
   }
@@ -122,13 +123,18 @@ export class CertificateService {
   }
 
   private async ensureExists(id: string) {
-    const certificate = await this.prisma.certificate.findUnique({ where: { id } });
-    if (!certificate) throw new NotFoundException(`Certificate ${id} not found`);
+    const certificate = await this.prisma.certificate.findUnique({
+      where: { id },
+    });
+    if (!certificate)
+      throw new NotFoundException(`Certificate ${id} not found`);
     return certificate;
   }
 
   /** Flatten the enrollment into the human-readable subject of the attestation. */
-  private buildContext(enrollment: EnrollmentContextSource): CertificateContext {
+  private buildContext(
+    enrollment: EnrollmentContextSource,
+  ): CertificateContext {
     // CURSUS → promo directe ; RENFORCEMENT → promo portée par la matière.
     const classGroup =
       enrollment.classGroup ?? enrollment.courseInstance?.classGroup ?? null;

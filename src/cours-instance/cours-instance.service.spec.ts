@@ -27,7 +27,10 @@ describe('CoursInstanceService', () => {
       providers: [
         CoursInstanceService,
         { provide: PrismaService, useValue: mockPrisma },
-        { provide: CurriculumCourseService, useValue: mockCurriculumCourseService },
+        {
+          provide: CurriculumCourseService,
+          useValue: mockCurriculumCourseService,
+        },
         { provide: ClassGroupService, useValue: mockClassGroupService },
       ],
     }).compile();
@@ -42,7 +45,11 @@ describe('CoursInstanceService', () => {
 
   describe('findOne', () => {
     it('returns the instance when found', async () => {
-      const instance = { id: '1', curriculumCourseId: 'c1', classGroupId: 'g1' };
+      const instance = {
+        id: '1',
+        curriculumCourseId: 'c1',
+        classGroupId: 'g1',
+      };
       mockPrisma.courseInstance.findUnique.mockResolvedValue(instance);
 
       await expect(service.findOne('1')).resolves.toEqual(instance);
@@ -51,7 +58,9 @@ describe('CoursInstanceService', () => {
     it('throws NotFoundException when missing', async () => {
       mockPrisma.courseInstance.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('missing')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -71,11 +80,15 @@ describe('CoursInstanceService', () => {
       await expect(service.create(dto)).resolves.toEqual({ id: '1', ...dto });
       expect(mockCurriculumCourseService.findOne).toHaveBeenCalledWith('c1');
       expect(mockClassGroupService.findOne).toHaveBeenCalledWith('g1');
-      expect(mockPrisma.courseInstance.create).toHaveBeenCalledWith({ data: dto });
+      expect(mockPrisma.courseInstance.create).toHaveBeenCalledWith({
+        data: dto,
+      });
     });
 
     it('propagates NotFoundException when the curriculum course is missing', async () => {
-      mockCurriculumCourseService.findOne.mockRejectedValue(new NotFoundException());
+      mockCurriculumCourseService.findOne.mockRejectedValue(
+        new NotFoundException(),
+      );
 
       await expect(service.create(dto)).rejects.toThrow(NotFoundException);
       expect(mockClassGroupService.findOne).not.toHaveBeenCalled();
@@ -164,7 +177,9 @@ describe('CoursInstanceService', () => {
     it('throws NotFoundException when deleting a missing instance', async () => {
       mockPrisma.courseInstance.findUnique.mockResolvedValue(null);
 
-      await expect(service.remove('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.remove('missing')).rejects.toThrow(
+        NotFoundException,
+      );
       expect(mockPrisma.courseInstance.delete).not.toHaveBeenCalled();
     });
   });

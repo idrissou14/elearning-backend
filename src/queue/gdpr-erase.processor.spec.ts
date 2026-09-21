@@ -21,9 +21,18 @@ describe('GdprEraseProcessor', () => {
       providers: [
         GdprEraseProcessor,
         { provide: PrismaService, useValue: mockPrisma },
-        { provide: getModelToken(LearnerProgress.name), useValue: learnerProgressModel },
-        { provide: getModelToken(ForumThread.name), useValue: forumThreadModel },
-        { provide: getModelToken(ActivityLog.name), useValue: activityLogModel },
+        {
+          provide: getModelToken(LearnerProgress.name),
+          useValue: learnerProgressModel,
+        },
+        {
+          provide: getModelToken(ForumThread.name),
+          useValue: forumThreadModel,
+        },
+        {
+          provide: getModelToken(ActivityLog.name),
+          useValue: activityLogModel,
+        },
       ],
     }).compile();
 

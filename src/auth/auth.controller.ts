@@ -52,8 +52,17 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOkResponse({ description: 'New access + refresh tokens (rotation)' })
-  refresh(@Request() req: { user: { sub: string; sessionId: string; refreshToken: string } }) {
-    return this.authService.refresh(req.user.sub, req.user.sessionId, req.user.refreshToken);
+  refresh(
+    @Request()
+    req: {
+      user: { sub: string; sessionId: string; refreshToken: string };
+    },
+  ) {
+    return this.authService.refresh(
+      req.user.sub,
+      req.user.sessionId,
+      req.user.refreshToken,
+    );
   }
 
   @Public()

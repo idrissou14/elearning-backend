@@ -35,8 +35,8 @@ export class AuditInterceptor implements NestInterceptor {
     );
   }
 
-  private record(request: Request, response: unknown) {
-    const user = request.user as { id?: string; email?: string } | undefined;
+  private record(request: Request & { user?: { id?: string; email?: string } }, response: unknown) {
+    const user = request.user;
     const resourceType = this.resourceTypeFrom(request);
     const resourceId = this.resourceIdFrom(request, response);
 
@@ -68,8 +68,11 @@ export class AuditInterceptor implements NestInterceptor {
   }
 
   private sanitize(body: unknown): Prisma.InputJsonValue | undefined {
-    if (!body || typeof body !== 'object' || Array.isArray(body)) return undefined;
-    const clone: Record<string, unknown> = { ...(body as Record<string, unknown>) };
+    if (!body || typeof body !== 'object' || Array.isArray(body))
+      return undefined;
+    const clone: Record<string, unknown> = {
+      ...(body as Record<string, unknown>),
+    };
     if (Object.keys(clone).length === 0) return undefined;
     for (const key of SENSITIVE_KEYS) {
       if (key in clone) clone[key] = '[REDACTED]';

@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ClassGroupService } from '../class-group/class-group.service';
 import { CurriculumCourseService } from '../curriculum-course/curriculum-course.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -31,8 +35,11 @@ export class CoursInstanceService {
   }
 
   async findOne(id: string) {
-    const instance = await this.prisma.courseInstance.findUnique({ where: { id } });
-    if (!instance) throw new NotFoundException(`Course instance ${id} not found`);
+    const instance = await this.prisma.courseInstance.findUnique({
+      where: { id },
+    });
+    if (!instance)
+      throw new NotFoundException(`Course instance ${id} not found`);
     return instance;
   }
 
@@ -51,9 +58,11 @@ export class CoursInstanceService {
     const current = await this.findOne(id);
     if (dto.curriculumCourseId)
       await this.curriculumCourseService.findOne(dto.curriculumCourseId);
-    if (dto.classGroupId) await this.classGroupService.findOne(dto.classGroupId);
+    if (dto.classGroupId)
+      await this.classGroupService.findOne(dto.classGroupId);
 
-    const curriculumCourseId = dto.curriculumCourseId ?? current.curriculumCourseId;
+    const curriculumCourseId =
+      dto.curriculumCourseId ?? current.curriculumCourseId;
     const classGroupId = dto.classGroupId ?? current.classGroupId;
     const academicYear = dto.academicYear ?? current.academicYear;
     await this.ensureUnique(curriculumCourseId, classGroupId, academicYear, id);

@@ -25,7 +25,9 @@ export class EvaluationService {
   }
 
   async findOne(id: string) {
-    const evaluation = await this.prisma.evaluation.findUnique({ where: { id } });
+    const evaluation = await this.prisma.evaluation.findUnique({
+      where: { id },
+    });
     if (!evaluation) throw new NotFoundException(`Evaluation ${id} not found`);
     return evaluation;
   }

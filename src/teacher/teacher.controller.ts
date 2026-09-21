@@ -27,10 +27,13 @@ export class TeacherController {
 
   @Get('course-instances/:id/content')
   @ApiOperation({
-    summary: 'Read-only LMS content the teacher published for one of their instances',
+    summary:
+      'Read-only LMS content the teacher published for one of their instances',
   })
   @ApiOkResponse({ description: 'Course instance summary + published content' })
-  @ApiForbiddenResponse({ description: 'Teacher not assigned to this instance' })
+  @ApiForbiddenResponse({
+    description: 'Teacher not assigned to this instance',
+  })
   @ApiNotFoundResponse({ description: 'No content published for this course' })
   getCourseContent(
     @CurrentUser('id') teacherId: string,

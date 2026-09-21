@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateDepartementDto } from './dto/create-departement.dto';
 import { UpdateDepartementDto } from './dto/update-departement.dto';
@@ -42,7 +46,9 @@ export class DepartementService {
 
   private async ensureCodeIsAvailable(code?: string, excludeId?: string) {
     if (!code) return;
-    const existing = await this.prisma.department.findUnique({ where: { code } });
+    const existing = await this.prisma.department.findUnique({
+      where: { code },
+    });
     if (existing && existing.id !== excludeId) {
       throw new ConflictException(`Department code "${code}" already in use`);
     }

@@ -39,7 +39,10 @@ describe('QuizService', () => {
 
   it('returns a quiz by id', async () => {
     quizModel.findById.mockReturnValue(leanOf({ _id: 'q1', title: 'Quiz' }));
-    await expect(service.findOne('q1')).resolves.toEqual({ _id: 'q1', title: 'Quiz' });
+    await expect(service.findOne('q1')).resolves.toEqual({
+      _id: 'q1',
+      title: 'Quiz',
+    });
   });
 
   it('throws NotFound for a missing quiz', async () => {

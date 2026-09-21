@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ClassStatus } from '../../generated/prisma/enums';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProgramLevelService } from '../program-level/program-level.service';
@@ -19,7 +23,9 @@ export class ClassGroupService {
   }) {
     return this.prisma.classGroup.findMany({
       where: {
-        ...(filters?.programLevelId && { programLevelId: filters.programLevelId }),
+        ...(filters?.programLevelId && {
+          programLevelId: filters.programLevelId,
+        }),
         ...(filters?.academicYear && { academicYear: filters.academicYear }),
         ...(filters?.status && { status: filters.status }),
       },
@@ -35,13 +41,18 @@ export class ClassGroupService {
 
   async create(dto: CreateClassGroupDto) {
     await this.programLevelService.findOne(dto.programLevelId);
-    await this.ensureNameIsAvailable(dto.programLevelId, dto.name, dto.academicYear);
+    await this.ensureNameIsAvailable(
+      dto.programLevelId,
+      dto.name,
+      dto.academicYear,
+    );
     return this.prisma.classGroup.create({ data: dto });
   }
 
   async update(id: string, dto: UpdateClassGroupDto) {
     const current = await this.findOne(id);
-    if (dto.programLevelId) await this.programLevelService.findOne(dto.programLevelId);
+    if (dto.programLevelId)
+      await this.programLevelService.findOne(dto.programLevelId);
 
     const programLevelId = dto.programLevelId ?? current.programLevelId;
     const name = dto.name ?? current.name;

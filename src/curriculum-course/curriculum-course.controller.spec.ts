@@ -20,7 +20,9 @@ describe('CurriculumCourseController', () => {
       providers: [{ provide: CurriculumCourseService, useValue: mockService }],
     }).compile();
 
-    controller = module.get<CurriculumCourseController>(CurriculumCourseController);
+    controller = module.get<CurriculumCourseController>(
+      CurriculumCourseController,
+    );
     jest.clearAllMocks();
   });
 

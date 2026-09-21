@@ -47,27 +47,39 @@ describe('AuthService', () => {
   });
 
   describe('login', () => {
+    const TEST_PASSWORD = 'test-password-123';
+    const WRONG_PASSWORD = 'wrong-test-password';
+
     it('throws when user not found', async () => {
       mockUserService.findByEmail.mockResolvedValue(null);
-      await expect(service.login({ email: 'x@x.com', password: 'password123' }))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(
+        service.login({ email: 'x@x.com', password: TEST_PASSWORD }),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('throws when password is wrong', async () => {
       mockUserService.findByEmail.mockResolvedValue({
-        id: '1', passwordHash: await bcrypt.hash('correct', 10),
+        id: '1',
+        passwordHash: await bcrypt.hash('correct', 10),
       });
-      await expect(service.login({ email: 'x@x.com', password: 'wrongpass1' }))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(
+        service.login({ email: 'x@x.com', password: WRONG_PASSWORD }),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('returns tokens on valid credentials', async () => {
-      const hash = await bcrypt.hash('password123', 10);
+      const hash = await bcrypt.hash(TEST_PASSWORD, 10);
       mockUserService.findByEmail.mockResolvedValue({
-        id: '1', email: 'a@b.com', role: 'STUDENT', passwordHash: hash,
+        id: '1',
+        email: 'a@b.com',
+        role: 'STUDENT',
+        passwordHash: hash,
       });
       mockPrisma.session.create.mockResolvedValue({});
-      const result = await service.login({ email: 'a@b.com', password: 'password123' });
+      const result = await service.login({
+        email: 'a@b.com',
+        password: TEST_PASSWORD,
+      });
       expect(result).toHaveProperty('accessToken');
       expect(result).toHaveProperty('refreshToken');
     });
@@ -76,7 +88,9 @@ describe('AuthService', () => {
   describe('refresh', () => {
     it('throws when session not found', async () => {
       mockPrisma.session.findFirst.mockResolvedValue(null);
-      await expect(service.refresh('uid', 'sid', 'token')).rejects.toThrow(UnauthorizedException);
+      await expect(service.refresh('uid', 'sid', 'token')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('throws when session is expired', async () => {
@@ -85,7 +99,9 @@ describe('AuthService', () => {
         refreshTokenHash: 'hash',
         expiresAt: new Date(Date.now() - 1000),
       });
-      await expect(service.refresh('uid', 'sid', 'token')).rejects.toThrow(UnauthorizedException);
+      await expect(service.refresh('uid', 'sid', 'token')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('throws when token hash does not match', async () => {
@@ -94,7 +110,9 @@ describe('AuthService', () => {
         refreshTokenHash: await bcrypt.hash('other-token', 10),
         expiresAt: new Date(Date.now() + 60000),
       });
-      await expect(service.refresh('uid', 'sid', 'wrong-token')).rejects.toThrow(UnauthorizedException);
+      await expect(
+        service.refresh('uid', 'sid', 'wrong-token'),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 

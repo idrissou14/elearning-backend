@@ -32,7 +32,9 @@ describe('ClassGroupController', () => {
     const list = [{ id: '1', name: 'Groupe A' }];
     mockService.findAll.mockReturnValue(list);
 
-    expect(controller.findAll('pl1', '2025-2026', ClassStatus.ACTIVE)).toBe(list);
+    expect(controller.findAll('pl1', '2025-2026', ClassStatus.ACTIVE)).toBe(
+      list,
+    );
     expect(mockService.findAll).toHaveBeenCalledWith({
       programLevelId: 'pl1',
       academicYear: '2025-2026',

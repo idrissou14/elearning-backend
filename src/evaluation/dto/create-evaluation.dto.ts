@@ -26,13 +26,23 @@ export class CreateEvaluationDto {
   @MinLength(2)
   name: string;
 
-  @ApiProperty({ example: 0.3, minimum: 0, maximum: 9.99, description: 'Weight in the final grade' })
+  @ApiProperty({
+    example: 0.3,
+    minimum: 0,
+    maximum: 9.99,
+    description: 'Weight in the final grade',
+  })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   @Max(9.99)
   weight: number;
 
-  @ApiPropertyOptional({ example: 20, minimum: 0, maximum: 999.99, default: 20.0 })
+  @ApiPropertyOptional({
+    example: 20,
+    minimum: 0,
+    maximum: 999.99,
+    default: 20.0,
+  })
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)

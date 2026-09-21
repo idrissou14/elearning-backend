@@ -24,7 +24,8 @@ export class AuthService {
 
   async login(dto: LoginDto) {
     const user = await this.userService.findByEmail(dto.email);
-    if (!user?.passwordHash) throw new UnauthorizedException('Invalid credentials');
+    if (!user?.passwordHash)
+      throw new UnauthorizedException('Invalid credentials');
 
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!valid) throw new UnauthorizedException('Invalid credentials');
@@ -67,18 +68,29 @@ export class AuthService {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(
         { sub: userId, email, role },
-        { secret: this.config.getOrThrow('JWT_ACCESS_SECRET'), expiresIn: '15m' },
+        {
+          secret: this.config.getOrThrow('JWT_ACCESS_SECRET'),
+          expiresIn: '15m',
+        },
       ),
       this.jwtService.signAsync(
         { sub: userId, sessionId },
-        { secret: this.config.getOrThrow('JWT_REFRESH_SECRET'), expiresIn: '7d' },
+        {
+          secret: this.config.getOrThrow('JWT_REFRESH_SECRET'),
+          expiresIn: '7d',
+        },
       ),
     ]);
 
     const hashedRefresh = await bcrypt.hash(refreshToken, 10);
 
     await this.prisma.session.create({
-      data: { id: sessionId, userId, refreshTokenHash: hashedRefresh, expiresAt },
+      data: {
+        id: sessionId,
+        userId,
+        refreshTokenHash: hashedRefresh,
+        expiresAt,
+      },
     });
 
     return { accessToken, refreshToken };

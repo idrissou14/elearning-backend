@@ -50,7 +50,12 @@ describe('GradeService', () => {
 
   describe('findOne', () => {
     it('returns the grade when found', async () => {
-      const grade = { id: '1', enrollmentId: 'e1', evaluationId: 'v1', score: 15 };
+      const grade = {
+        id: '1',
+        enrollmentId: 'e1',
+        evaluationId: 'v1',
+        score: 15,
+      };
       mockPrisma.grade.findUnique.mockResolvedValue(grade);
 
       await expect(service.findOne('1')).resolves.toEqual(grade);
@@ -59,7 +64,9 @@ describe('GradeService', () => {
     it('throws NotFoundException when missing', async () => {
       mockPrisma.grade.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('missing')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -68,7 +75,10 @@ describe('GradeService', () => {
 
     it('creates a grade when parents exist, score is valid and not already graded', async () => {
       mockEnrollmentService.findOne.mockResolvedValue({ id: 'e1' });
-      mockEvaluationService.findOne.mockResolvedValue({ id: 'v1', maxScore: 20 });
+      mockEvaluationService.findOne.mockResolvedValue({
+        id: 'v1',
+        maxScore: 20,
+      });
       mockPrisma.grade.findFirst.mockResolvedValue(null);
       mockPrisma.grade.create.mockResolvedValue({ id: '1', ...dto });
 
@@ -85,7 +95,10 @@ describe('GradeService', () => {
 
     it('throws BadRequestException when the score exceeds maxScore', async () => {
       mockEnrollmentService.findOne.mockResolvedValue({ id: 'e1' });
-      mockEvaluationService.findOne.mockResolvedValue({ id: 'v1', maxScore: 10 });
+      mockEvaluationService.findOne.mockResolvedValue({
+        id: 'v1',
+        maxScore: 10,
+      });
 
       await expect(service.create({ ...dto, score: 15 })).rejects.toThrow(
         BadRequestException,
@@ -95,8 +108,14 @@ describe('GradeService', () => {
 
     it('throws BadRequestException when the grader is a student', async () => {
       mockEnrollmentService.findOne.mockResolvedValue({ id: 'e1' });
-      mockEvaluationService.findOne.mockResolvedValue({ id: 'v1', maxScore: 20 });
-      mockUserService.findOne.mockResolvedValue({ id: 'g1', role: Role.STUDENT });
+      mockEvaluationService.findOne.mockResolvedValue({
+        id: 'v1',
+        maxScore: 20,
+      });
+      mockUserService.findOne.mockResolvedValue({
+        id: 'g1',
+        role: Role.STUDENT,
+      });
 
       await expect(service.create({ ...dto, gradedBy: 'g1' })).rejects.toThrow(
         BadRequestException,
@@ -106,8 +125,14 @@ describe('GradeService', () => {
 
     it('accepts a teacher as grader', async () => {
       mockEnrollmentService.findOne.mockResolvedValue({ id: 'e1' });
-      mockEvaluationService.findOne.mockResolvedValue({ id: 'v1', maxScore: 20 });
-      mockUserService.findOne.mockResolvedValue({ id: 'g1', role: Role.TEACHER });
+      mockEvaluationService.findOne.mockResolvedValue({
+        id: 'v1',
+        maxScore: 20,
+      });
+      mockUserService.findOne.mockResolvedValue({
+        id: 'g1',
+        role: Role.TEACHER,
+      });
       mockPrisma.grade.findFirst.mockResolvedValue(null);
       mockPrisma.grade.create.mockResolvedValue({ id: '1' });
 
@@ -118,7 +143,10 @@ describe('GradeService', () => {
 
     it('throws ConflictException when already graded', async () => {
       mockEnrollmentService.findOne.mockResolvedValue({ id: 'e1' });
-      mockEvaluationService.findOne.mockResolvedValue({ id: 'v1', maxScore: 20 });
+      mockEvaluationService.findOne.mockResolvedValue({
+        id: 'v1',
+        maxScore: 20,
+      });
       mockPrisma.grade.findFirst.mockResolvedValue({ id: '99' });
 
       await expect(service.create(dto)).rejects.toThrow(ConflictException);
@@ -142,7 +170,10 @@ describe('GradeService', () => {
         evaluationId: 'v1',
         score: 8,
       });
-      mockEvaluationService.findOne.mockResolvedValue({ id: 'v1', maxScore: 10 });
+      mockEvaluationService.findOne.mockResolvedValue({
+        id: 'v1',
+        maxScore: 10,
+      });
 
       await expect(service.update('1', { score: 18 })).rejects.toThrow(
         BadRequestException,
@@ -175,13 +206,17 @@ describe('GradeService', () => {
       mockPrisma.grade.delete.mockResolvedValue({ id: '1' });
 
       await service.remove('1');
-      expect(mockPrisma.grade.delete).toHaveBeenCalledWith({ where: { id: '1' } });
+      expect(mockPrisma.grade.delete).toHaveBeenCalledWith({
+        where: { id: '1' },
+      });
     });
 
     it('throws NotFoundException when deleting a missing grade', async () => {
       mockPrisma.grade.findUnique.mockResolvedValue(null);
 
-      await expect(service.remove('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.remove('missing')).rejects.toThrow(
+        NotFoundException,
+      );
       expect(mockPrisma.grade.delete).not.toHaveBeenCalled();
     });
   });

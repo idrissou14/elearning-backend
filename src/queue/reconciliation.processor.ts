@@ -99,7 +99,7 @@ export class ReconciliationProcessor extends WorkerHost {
       instances.map((i) => i.contentRef).filter((v): v is string => Boolean(v)),
     );
     const contents = await this.courseContentModel.find({}, { _id: 1 }).lean();
-    const contentIds = new Set(contents.map((c) => c._id as string));
+    const contentIds = new Set(contents.map((c) => c._id));
 
     for (const id of contentIds) {
       if (!contentRefs.has(id)) report.orphanCourseContent.push(id);
@@ -128,7 +128,8 @@ export class ReconciliationProcessor extends WorkerHost {
     }
 
     // forum_threads.classGroupId → class_groups (check 4)
-    const groupIds: string[] = await this.forumThreadModel.distinct('classGroupId');
+    const groupIds: string[] =
+      await this.forumThreadModel.distinct('classGroupId');
     if (groupIds.length) {
       const groups = await this.prisma.classGroup.findMany({
         where: { id: { in: groupIds } },
@@ -152,7 +153,7 @@ export class ReconciliationProcessor extends WorkerHost {
       const quizzes = await this.quizModel
         .find({ _id: { $in: quizRefs } }, { _id: 1 })
         .lean();
-      const quizSet = new Set(quizzes.map((q) => q._id as string));
+      const quizSet = new Set(quizzes.map((q) => q._id));
       for (const evaluation of evaluations) {
         if (evaluation.quizRef && !quizSet.has(evaluation.quizRef)) {
           report.danglingQuizRefs.push(evaluation.id);
@@ -165,11 +166,16 @@ export class ReconciliationProcessor extends WorkerHost {
   }
 
   private logReport(report: ReconciliationReport) {
-    const total = Object.values(report).reduce((sum, arr) => sum + arr.length, 0);
+    const total = Object.values(report).reduce(
+      (sum, arr) => sum + arr.length,
+      0,
+    );
     if (total === 0) {
       this.logger.log('Reconciliation: no inconsistencies found');
       return;
     }
-    this.logger.warn(`Reconciliation found ${total} inconsistencies: ${JSON.stringify(report)}`);
+    this.logger.warn(
+      `Reconciliation found ${total} inconsistencies: ${JSON.stringify(report)}`,
+    );
   }
 }

@@ -18,7 +18,10 @@ const GRADING_MODES = ['auto', 'manual'];
 class ChoiceDto {
   @ApiProperty() @IsString() id: string;
   @ApiProperty() @IsString() @MinLength(1) text: string;
-  @ApiPropertyOptional({ default: false }) @IsOptional() @IsBoolean() correct?: boolean;
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  correct?: boolean;
 }
 
 class QuestionDto {
@@ -53,7 +56,9 @@ export class CreateQuizDto {
   @MinLength(2)
   title: string;
 
-  @ApiPropertyOptional({ description: 'Global timer in seconds (null = no limit)' })
+  @ApiPropertyOptional({
+    description: 'Global timer in seconds (null = no limit)',
+  })
   @IsOptional()
   @IsInt()
   @Min(0)

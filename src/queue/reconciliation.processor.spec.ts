@@ -6,10 +6,7 @@ import { ForumThread } from '../mongodb/schemas/forum-thread.schema';
 import { LearnerProgress } from '../mongodb/schemas/learner-progress.schema';
 import { Quiz } from '../mongodb/schemas/quiz.schema';
 import { PrismaService } from '../prisma/prisma.service';
-import {
-  PROGRESS_RETRY_JOB,
-  RECONCILIATION_JOB,
-} from './queue.constants';
+import { PROGRESS_RETRY_JOB, RECONCILIATION_JOB } from './queue.constants';
 import {
   ReconciliationProcessor,
   ReconciliationReport,
@@ -21,7 +18,9 @@ const mockPrisma = {
   classGroup: { findMany: jest.fn() },
   evaluation: { findMany: jest.fn() },
 };
-const leanOf = (value: unknown) => ({ lean: jest.fn().mockResolvedValue(value) });
+const leanOf = (value: unknown) => ({
+  lean: jest.fn().mockResolvedValue(value),
+});
 const courseContentModel = { find: jest.fn() };
 const quizModel = { find: jest.fn() };
 const learnerProgressModel = { distinct: jest.fn(), updateOne: jest.fn() };
@@ -35,10 +34,19 @@ describe('ReconciliationProcessor', () => {
       providers: [
         ReconciliationProcessor,
         { provide: PrismaService, useValue: mockPrisma },
-        { provide: getModelToken(CourseContent.name), useValue: courseContentModel },
+        {
+          provide: getModelToken(CourseContent.name),
+          useValue: courseContentModel,
+        },
         { provide: getModelToken(Quiz.name), useValue: quizModel },
-        { provide: getModelToken(LearnerProgress.name), useValue: learnerProgressModel },
-        { provide: getModelToken(ForumThread.name), useValue: forumThreadModel },
+        {
+          provide: getModelToken(LearnerProgress.name),
+          useValue: learnerProgressModel,
+        },
+        {
+          provide: getModelToken(ForumThread.name),
+          useValue: forumThreadModel,
+        },
       ],
     }).compile();
 
@@ -51,15 +59,22 @@ describe('ReconciliationProcessor', () => {
       { id: 'ci1', contentRef: 'cc1' },
       { id: 'ci2', contentRef: 'missing-content' },
     ]);
-    courseContentModel.find.mockReturnValue(leanOf([{ _id: 'cc1' }, { _id: 'orphan' }]));
+    courseContentModel.find.mockReturnValue(
+      leanOf([{ _id: 'cc1' }, { _id: 'orphan' }]),
+    );
 
-    learnerProgressModel.distinct.mockResolvedValue(['u1', 'ANONYMIZED-deadbeef']);
+    learnerProgressModel.distinct.mockResolvedValue([
+      'u1',
+      'ANONYMIZED-deadbeef',
+    ]);
     mockPrisma.user.findMany.mockResolvedValue([]); // u1 missing
 
     forumThreadModel.distinct.mockResolvedValue(['g1']);
     mockPrisma.classGroup.findMany.mockResolvedValue([]); // g1 missing
 
-    mockPrisma.evaluation.findMany.mockResolvedValue([{ id: 'e1', quizRef: 'q1' }]);
+    mockPrisma.evaluation.findMany.mockResolvedValue([
+      { id: 'e1', quizRef: 'q1' },
+    ]);
     quizModel.find.mockReturnValue(leanOf([])); // q1 missing
 
     const report = (await processor.process({

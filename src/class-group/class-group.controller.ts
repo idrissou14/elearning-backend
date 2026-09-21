@@ -36,7 +36,11 @@ export class ClassGroupController {
     @Query('academicYear') academicYear?: string,
     @Query('status') status?: ClassStatus,
   ) {
-    return this.classGroupService.findAll({ programLevelId, academicYear, status });
+    return this.classGroupService.findAll({
+      programLevelId,
+      academicYear,
+      status,
+    });
   }
 
   @Get(':id')
@@ -56,7 +60,9 @@ export class ClassGroupController {
 
   @Patch(':id')
   @ApiOkResponse({ description: 'Class group updated' })
-  @ApiNotFoundResponse({ description: 'Class group or program level not found' })
+  @ApiNotFoundResponse({
+    description: 'Class group or program level not found',
+  })
   update(@Param('id') id: string, @Body() dto: UpdateClassGroupDto) {
     return this.classGroupService.update(id, dto);
   }

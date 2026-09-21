@@ -56,7 +56,9 @@ describe('CourseTeacherService', () => {
     it('throws NotFoundException when missing', async () => {
       mockPrisma.courseTeacher.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('missing')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -65,18 +67,25 @@ describe('CourseTeacherService', () => {
 
     it('assigns a teacher when course instance exists, user is a teacher and not assigned yet', async () => {
       mockCoursInstanceService.findOne.mockResolvedValue({ id: 'ci1' });
-      mockUserService.findOne.mockResolvedValue({ id: 't1', role: Role.TEACHER });
+      mockUserService.findOne.mockResolvedValue({
+        id: 't1',
+        role: Role.TEACHER,
+      });
       mockPrisma.courseTeacher.findFirst.mockResolvedValue(null);
       mockPrisma.courseTeacher.create.mockResolvedValue({ id: '1', ...dto });
 
       await expect(service.create(dto)).resolves.toEqual({ id: '1', ...dto });
       expect(mockCoursInstanceService.findOne).toHaveBeenCalledWith('ci1');
       expect(mockUserService.findOne).toHaveBeenCalledWith('t1');
-      expect(mockPrisma.courseTeacher.create).toHaveBeenCalledWith({ data: dto });
+      expect(mockPrisma.courseTeacher.create).toHaveBeenCalledWith({
+        data: dto,
+      });
     });
 
     it('propagates NotFoundException when the course instance is missing', async () => {
-      mockCoursInstanceService.findOne.mockRejectedValue(new NotFoundException());
+      mockCoursInstanceService.findOne.mockRejectedValue(
+        new NotFoundException(),
+      );
 
       await expect(service.create(dto)).rejects.toThrow(NotFoundException);
       expect(mockUserService.findOne).not.toHaveBeenCalled();
@@ -85,7 +94,10 @@ describe('CourseTeacherService', () => {
 
     it('throws BadRequestException when the user is not a teacher', async () => {
       mockCoursInstanceService.findOne.mockResolvedValue({ id: 'ci1' });
-      mockUserService.findOne.mockResolvedValue({ id: 't1', role: Role.STUDENT });
+      mockUserService.findOne.mockResolvedValue({
+        id: 't1',
+        role: Role.STUDENT,
+      });
 
       await expect(service.create(dto)).rejects.toThrow(BadRequestException);
       expect(mockPrisma.courseTeacher.create).not.toHaveBeenCalled();
@@ -93,7 +105,10 @@ describe('CourseTeacherService', () => {
 
     it('throws ConflictException when the teacher is already assigned', async () => {
       mockCoursInstanceService.findOne.mockResolvedValue({ id: 'ci1' });
-      mockUserService.findOne.mockResolvedValue({ id: 't1', role: Role.TEACHER });
+      mockUserService.findOne.mockResolvedValue({
+        id: 't1',
+        role: Role.TEACHER,
+      });
       mockPrisma.courseTeacher.findFirst.mockResolvedValue({ id: '99' });
 
       await expect(service.create(dto)).rejects.toThrow(ConflictException);
@@ -104,7 +119,10 @@ describe('CourseTeacherService', () => {
   describe('update', () => {
     it('updates the role of an existing assignment', async () => {
       mockPrisma.courseTeacher.findUnique.mockResolvedValue({ id: '1' });
-      mockPrisma.courseTeacher.update.mockResolvedValue({ id: '1', role: 'ASSISTANT' });
+      mockPrisma.courseTeacher.update.mockResolvedValue({
+        id: '1',
+        role: 'ASSISTANT',
+      });
 
       await service.update('1', { role: undefined });
       expect(mockPrisma.courseTeacher.update).toHaveBeenCalledWith({
@@ -116,7 +134,9 @@ describe('CourseTeacherService', () => {
     it('throws NotFoundException when the assignment does not exist', async () => {
       mockPrisma.courseTeacher.findUnique.mockResolvedValue(null);
 
-      await expect(service.update('missing', {})).rejects.toThrow(NotFoundException);
+      await expect(service.update('missing', {})).rejects.toThrow(
+        NotFoundException,
+      );
       expect(mockPrisma.courseTeacher.update).not.toHaveBeenCalled();
     });
   });
@@ -127,13 +147,17 @@ describe('CourseTeacherService', () => {
       mockPrisma.courseTeacher.delete.mockResolvedValue({ id: '1' });
 
       await service.remove('1');
-      expect(mockPrisma.courseTeacher.delete).toHaveBeenCalledWith({ where: { id: '1' } });
+      expect(mockPrisma.courseTeacher.delete).toHaveBeenCalledWith({
+        where: { id: '1' },
+      });
     });
 
     it('throws NotFoundException when deleting a missing assignment', async () => {
       mockPrisma.courseTeacher.findUnique.mockResolvedValue(null);
 
-      await expect(service.remove('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.remove('missing')).rejects.toThrow(
+        NotFoundException,
+      );
       expect(mockPrisma.courseTeacher.delete).not.toHaveBeenCalled();
     });
   });

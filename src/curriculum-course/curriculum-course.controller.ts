@@ -27,7 +27,9 @@ import { CurriculumCourseService } from './curriculum-course.service';
 @Roles(Role.ADMIN)
 @Controller('curriculum-course')
 export class CurriculumCourseController {
-  constructor(private readonly curriculumCourseService: CurriculumCourseService) {}
+  constructor(
+    private readonly curriculumCourseService: CurriculumCourseService,
+  ) {}
 
   @Get()
   @ApiOkResponse({ description: 'List of curriculum courses' })
@@ -55,7 +57,9 @@ export class CurriculumCourseController {
 
   @Patch(':id')
   @ApiOkResponse({ description: 'Curriculum course updated' })
-  @ApiNotFoundResponse({ description: 'Curriculum course or program level not found' })
+  @ApiNotFoundResponse({
+    description: 'Curriculum course or program level not found',
+  })
   update(@Param('id') id: string, @Body() dto: UpdateCurriculumCourseDto) {
     return this.curriculumCourseService.update(id, dto);
   }

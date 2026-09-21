@@ -27,8 +27,12 @@ export class QuizController {
   @Roles(Role.ADMIN, Role.TEACHER)
   @Post('evaluation/:id/quiz')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Create/attach the quiz of an evaluation (SAGA-02)' })
-  @ApiCreatedResponse({ description: 'Quiz created and linked to the evaluation' })
+  @ApiOperation({
+    summary: 'Create/attach the quiz of an evaluation (SAGA-02)',
+  })
+  @ApiCreatedResponse({
+    description: 'Quiz created and linked to the evaluation',
+  })
   @ApiNotFoundResponse({ description: 'Evaluation not found' })
   create(@Param('id') evaluationId: string, @Body() dto: CreateQuizDto) {
     return this.quizService.createForEvaluation(evaluationId, dto);

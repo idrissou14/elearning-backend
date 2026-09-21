@@ -2,7 +2,13 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { randomUUID } from 'crypto';
 import { HydratedDocument } from 'mongoose';
 
-export type LessonType = 'video' | 'markdown' | 'pdf' | 'quiz' | 'assignment' | 'scorm';
+export type LessonType =
+  | 'video'
+  | 'markdown'
+  | 'pdf'
+  | 'quiz'
+  | 'assignment'
+  | 'scorm';
 export type DripUnlockMode = 'sequential' | 'date' | 'free';
 
 @Schema({ _id: false })

@@ -43,7 +43,9 @@ describe('DepartementService', () => {
     it('throws NotFoundException when missing', async () => {
       mockPrisma.department.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('missing')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -58,7 +60,10 @@ describe('DepartementService', () => {
     });
 
     it('throws ConflictException when the code already exists', async () => {
-      mockPrisma.department.findUnique.mockResolvedValue({ id: '99', code: 'GI' });
+      mockPrisma.department.findUnique.mockResolvedValue({
+        id: '99',
+        code: 'GI',
+      });
 
       await expect(service.create({ name: 'X', code: 'GI' })).rejects.toThrow(
         ConflictException,
@@ -81,11 +86,14 @@ describe('DepartementService', () => {
       mockPrisma.department.findUnique
         .mockResolvedValueOnce(existing) // findOne
         .mockResolvedValueOnce(existing); // ensureCodeIsAvailable
-      mockPrisma.department.update.mockResolvedValue({ ...existing, name: 'GI v2' });
+      mockPrisma.department.update.mockResolvedValue({
+        ...existing,
+        name: 'GI v2',
+      });
 
-      await expect(service.update('1', { name: 'GI v2', code: 'GI' })).resolves.toEqual(
-        { ...existing, name: 'GI v2' },
-      );
+      await expect(
+        service.update('1', { name: 'GI v2', code: 'GI' }),
+      ).resolves.toEqual({ ...existing, name: 'GI v2' });
     });
 
     it('throws ConflictException when the code belongs to another department', async () => {
@@ -101,17 +109,24 @@ describe('DepartementService', () => {
 
   describe('remove', () => {
     it('deletes an existing department', async () => {
-      mockPrisma.department.findUnique.mockResolvedValue({ id: '1', name: 'GI' });
+      mockPrisma.department.findUnique.mockResolvedValue({
+        id: '1',
+        name: 'GI',
+      });
       mockPrisma.department.delete.mockResolvedValue({ id: '1' });
 
       await service.remove('1');
-      expect(mockPrisma.department.delete).toHaveBeenCalledWith({ where: { id: '1' } });
+      expect(mockPrisma.department.delete).toHaveBeenCalledWith({
+        where: { id: '1' },
+      });
     });
 
     it('throws NotFoundException when deleting a missing department', async () => {
       mockPrisma.department.findUnique.mockResolvedValue(null);
 
-      await expect(service.remove('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.remove('missing')).rejects.toThrow(
+        NotFoundException,
+      );
       expect(mockPrisma.department.delete).not.toHaveBeenCalled();
     });
   });

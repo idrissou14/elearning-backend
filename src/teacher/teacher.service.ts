@@ -1,4 +1,8 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {
@@ -87,7 +91,9 @@ export class TeacherService {
 
     const instance = assignment.courseInstance;
     if (!instance.contentRef) {
-      throw new NotFoundException('No content has been published for this course');
+      throw new NotFoundException(
+        'No content has been published for this course',
+      );
     }
 
     // Only the most recently attached quiz is surfaced. The authoritative link

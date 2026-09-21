@@ -11,7 +11,14 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-const LESSON_TYPES = ['video', 'markdown', 'pdf', 'quiz', 'assignment', 'scorm'];
+const LESSON_TYPES = [
+  'video',
+  'markdown',
+  'pdf',
+  'quiz',
+  'assignment',
+  'scorm',
+];
 const UNLOCK_MODES = ['sequential', 'date', 'free'];
 
 class LessonVideoDto {
@@ -33,7 +40,10 @@ class DripDto {
   unlockMode?: string;
 
   @ApiPropertyOptional() @IsOptional() @Type(() => Date) unlockDate?: Date;
-  @ApiPropertyOptional() @IsOptional() @IsString() requiredPreviousModule?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  requiredPreviousModule?: string;
 }
 
 class LessonDto {

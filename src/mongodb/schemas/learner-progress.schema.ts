@@ -43,7 +43,8 @@ export class ModuleProgress {
   @Prop({ enum: ['locked', 'in_progress', 'completed'], default: 'locked' })
   status: ProgressStatus;
   @Prop() completedAt?: Date;
-  @Prop({ type: [LessonProgressSchema], default: [] }) lessons: LessonProgress[];
+  @Prop({ type: [LessonProgressSchema], default: [] })
+  lessons: LessonProgress[];
 }
 const ModuleProgressSchema = SchemaFactory.createForClass(ModuleProgress);
 
@@ -60,11 +61,13 @@ export class LearnerProgress {
   /** REF-05: UUID → class_groups.id. */
   @Prop({ required: true }) classGroupId: string;
 
-  @Prop({ type: [ModuleProgressSchema], default: [] }) modules: ModuleProgress[];
+  @Prop({ type: [ModuleProgressSchema], default: [] })
+  modules: ModuleProgress[];
   @Prop() lastActivity?: Date;
 }
 
-export const LearnerProgressSchema = SchemaFactory.createForClass(LearnerProgress);
+export const LearnerProgressSchema =
+  SchemaFactory.createForClass(LearnerProgress);
 
 // One progress document per user × course.
 LearnerProgressSchema.index({ userId: 1, courseId: 1 }, { unique: true });

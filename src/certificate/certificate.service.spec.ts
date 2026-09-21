@@ -73,7 +73,11 @@ describe('CertificateService', () => {
       });
 
       const result = await service.findOne('1');
-      expect(result).toMatchObject({ id: '1', enrollmentId: 'e1', s3Path: 'path.pdf' });
+      expect(result).toMatchObject({
+        id: '1',
+        enrollmentId: 'e1',
+        s3Path: 'path.pdf',
+      });
       expect(result.context).toEqual({
         type: 'CURSUS',
         academicYear: '2025-2026',
@@ -87,7 +91,9 @@ describe('CertificateService', () => {
     it('throws NotFoundException when missing', async () => {
       mockPrisma.certificate.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('missing')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -121,7 +127,9 @@ describe('CertificateService', () => {
     const dto = { enrollmentId: 'e2', s3Path: 'path.pdf' };
 
     it('issues a certificate for a COMPLETED enrollment and returns its context', async () => {
-      mockPrisma.enrollment.findUnique.mockResolvedValue(enrollmentRenforcement);
+      mockPrisma.enrollment.findUnique.mockResolvedValue(
+        enrollmentRenforcement,
+      );
       mockPrisma.certificate.findFirst.mockResolvedValue(null);
       mockPrisma.certificate.create.mockResolvedValue({ id: '1', ...dto });
 
@@ -149,7 +157,9 @@ describe('CertificateService', () => {
     });
 
     it('throws ConflictException when a certificate already exists', async () => {
-      mockPrisma.enrollment.findUnique.mockResolvedValue(enrollmentRenforcement);
+      mockPrisma.enrollment.findUnique.mockResolvedValue(
+        enrollmentRenforcement,
+      );
       mockPrisma.certificate.findFirst.mockResolvedValue({ id: 'existing' });
 
       await expect(service.create(dto)).rejects.toThrow(ConflictException);
@@ -160,7 +170,10 @@ describe('CertificateService', () => {
   describe('update', () => {
     it('updates an existing certificate', async () => {
       mockPrisma.certificate.findUnique.mockResolvedValue({ id: '1' });
-      mockPrisma.certificate.update.mockResolvedValue({ id: '1', s3Path: 'new.pdf' });
+      mockPrisma.certificate.update.mockResolvedValue({
+        id: '1',
+        s3Path: 'new.pdf',
+      });
 
       await service.update('1', { s3Path: 'new.pdf' });
       expect(mockPrisma.certificate.update).toHaveBeenCalledWith({
@@ -172,7 +185,9 @@ describe('CertificateService', () => {
     it('throws NotFoundException when the certificate does not exist', async () => {
       mockPrisma.certificate.findUnique.mockResolvedValue(null);
 
-      await expect(service.update('missing', {})).rejects.toThrow(NotFoundException);
+      await expect(service.update('missing', {})).rejects.toThrow(
+        NotFoundException,
+      );
       expect(mockPrisma.certificate.update).not.toHaveBeenCalled();
     });
   });
@@ -183,13 +198,17 @@ describe('CertificateService', () => {
       mockPrisma.certificate.delete.mockResolvedValue({ id: '1' });
 
       await service.remove('1');
-      expect(mockPrisma.certificate.delete).toHaveBeenCalledWith({ where: { id: '1' } });
+      expect(mockPrisma.certificate.delete).toHaveBeenCalledWith({
+        where: { id: '1' },
+      });
     });
 
     it('throws NotFoundException when deleting a missing certificate', async () => {
       mockPrisma.certificate.findUnique.mockResolvedValue(null);
 
-      await expect(service.remove('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.remove('missing')).rejects.toThrow(
+        NotFoundException,
+      );
       expect(mockPrisma.certificate.delete).not.toHaveBeenCalled();
     });
   });

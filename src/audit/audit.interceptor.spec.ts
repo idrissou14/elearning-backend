@@ -37,21 +37,27 @@ describe('AuditInterceptor', () => {
   let interceptor: AuditInterceptor;
 
   beforeEach(() => {
-    interceptor = new AuditInterceptor(mockAuditService as unknown as AuditService);
+    interceptor = new AuditInterceptor(
+      mockAuditService as unknown as AuditService,
+    );
     jest.clearAllMocks();
     mockAuditService.record.mockResolvedValue({ id: 'log1' });
   });
 
   it('does not record GET requests', async () => {
     const ctx = createContext(baseRequest({ method: 'GET' }));
-    await firstValueFrom(interceptor.intercept(ctx, createHandler({ id: 'x' })));
+    await firstValueFrom(
+      interceptor.intercept(ctx, createHandler({ id: 'x' })),
+    );
 
     expect(mockAuditService.record).not.toHaveBeenCalled();
   });
 
   it('does not record non-http contexts', async () => {
     const ctx = createContext(baseRequest(), 'rpc');
-    await firstValueFrom(interceptor.intercept(ctx, createHandler({ id: 'x' })));
+    await firstValueFrom(
+      interceptor.intercept(ctx, createHandler({ id: 'x' })),
+    );
 
     expect(mockAuditService.record).not.toHaveBeenCalled();
   });
@@ -60,7 +66,9 @@ describe('AuditInterceptor', () => {
     const ctx = createContext(
       baseRequest({ method: 'POST', body: { name: 'John' } }),
     );
-    await firstValueFrom(interceptor.intercept(ctx, createHandler({ id: 'c1' })));
+    await firstValueFrom(
+      interceptor.intercept(ctx, createHandler({ id: 'c1' })),
+    );
 
     expect(mockAuditService.record).toHaveBeenCalledWith({
       actorId: 'u1',
@@ -76,7 +84,9 @@ describe('AuditInterceptor', () => {
 
   it('redacts sensitive fields in the payload', async () => {
     const ctx = createContext(
-      baseRequest({ body: { email: 'a@b.com', password: 'secret' } }),
+      baseRequest({
+        body: { email: 'a@b.com', password: 'test-password-123' },
+      }),
     );
     await firstValueFrom(interceptor.intercept(ctx, createHandler(null)));
 
@@ -111,7 +121,9 @@ describe('AuditInterceptor', () => {
 
   it('omits the payload for an empty body', async () => {
     const ctx = createContext(baseRequest({ body: {} }));
-    await firstValueFrom(interceptor.intercept(ctx, createHandler({ id: 'c1' })));
+    await firstValueFrom(
+      interceptor.intercept(ctx, createHandler({ id: 'c1' })),
+    );
 
     const arg = mockAuditService.record.mock.calls[0][0];
     expect(arg.payload).toBeUndefined();

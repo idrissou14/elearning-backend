@@ -49,7 +49,9 @@ describe('ProgramService', () => {
     it('throws NotFoundException when missing', async () => {
       mockPrisma.program.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('missing')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -75,7 +77,10 @@ describe('ProgramService', () => {
 
     it('throws ConflictException when the code already exists', async () => {
       mockDepartementService.findOne.mockResolvedValue({ id: 'd1' });
-      mockPrisma.program.findUnique.mockResolvedValue({ id: '99', code: 'LIC' });
+      mockPrisma.program.findUnique.mockResolvedValue({
+        id: '99',
+        code: 'LIC',
+      });
 
       await expect(service.create(dto)).rejects.toThrow(ConflictException);
       expect(mockPrisma.program.create).not.toHaveBeenCalled();
@@ -94,7 +99,10 @@ describe('ProgramService', () => {
     it('validates the new department when departmentId changes', async () => {
       mockPrisma.program.findUnique.mockResolvedValue({ id: '1', name: 'Old' });
       mockDepartementService.findOne.mockResolvedValue({ id: 'd2' });
-      mockPrisma.program.update.mockResolvedValue({ id: '1', departmentId: 'd2' });
+      mockPrisma.program.update.mockResolvedValue({
+        id: '1',
+        departmentId: 'd2',
+      });
 
       await service.update('1', { departmentId: 'd2' });
       expect(mockDepartementService.findOne).toHaveBeenCalledWith('d2');
@@ -113,17 +121,24 @@ describe('ProgramService', () => {
 
   describe('remove', () => {
     it('deletes an existing program', async () => {
-      mockPrisma.program.findUnique.mockResolvedValue({ id: '1', name: 'Licence' });
+      mockPrisma.program.findUnique.mockResolvedValue({
+        id: '1',
+        name: 'Licence',
+      });
       mockPrisma.program.delete.mockResolvedValue({ id: '1' });
 
       await service.remove('1');
-      expect(mockPrisma.program.delete).toHaveBeenCalledWith({ where: { id: '1' } });
+      expect(mockPrisma.program.delete).toHaveBeenCalledWith({
+        where: { id: '1' },
+      });
     });
 
     it('throws NotFoundException when deleting a missing program', async () => {
       mockPrisma.program.findUnique.mockResolvedValue(null);
 
-      await expect(service.remove('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.remove('missing')).rejects.toThrow(
+        NotFoundException,
+      );
       expect(mockPrisma.program.delete).not.toHaveBeenCalled();
     });
   });

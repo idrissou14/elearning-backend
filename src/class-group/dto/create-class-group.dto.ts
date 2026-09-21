@@ -1,5 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString, IsUUID, Matches, MinLength } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Matches,
+  MinLength,
+} from 'class-validator';
 import { ClassStatus } from '../../../generated/prisma/enums';
 
 export class CreateClassGroupDto {
@@ -13,7 +20,9 @@ export class CreateClassGroupDto {
   name: string;
 
   @ApiProperty({ example: '2025-2026' })
-  @Matches(/^\d{4}-\d{4}$/, { message: 'academicYear must be in the format YYYY-YYYY' })
+  @Matches(/^\d{4}-\d{4}$/, {
+    message: 'academicYear must be in the format YYYY-YYYY',
+  })
   academicYear: string;
 
   @ApiPropertyOptional({ enum: ClassStatus, default: ClassStatus.DRAFT })

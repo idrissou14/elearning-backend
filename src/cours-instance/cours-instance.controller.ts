@@ -53,14 +53,18 @@ export class CoursInstanceController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiCreatedResponse({ description: 'Course instance created' })
-  @ApiNotFoundResponse({ description: 'Curriculum course or class group not found' })
+  @ApiNotFoundResponse({
+    description: 'Curriculum course or class group not found',
+  })
   create(@Body() dto: CreateCoursInstanceDto) {
     return this.coursInstanceService.create(dto);
   }
 
   @Patch(':id')
   @ApiOkResponse({ description: 'Course instance updated' })
-  @ApiNotFoundResponse({ description: 'Course instance, curriculum course or class group not found' })
+  @ApiNotFoundResponse({
+    description: 'Course instance, curriculum course or class group not found',
+  })
   update(@Param('id') id: string, @Body() dto: UpdateCoursInstanceDto) {
     return this.coursInstanceService.update(id, dto);
   }

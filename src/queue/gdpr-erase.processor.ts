@@ -71,7 +71,10 @@ export class GdprEraseProcessor extends WorkerHost {
     );
 
     // activity_logs (REF-08)
-    await this.activityLogModel.updateMany({ userId }, { $set: { userId: anon } });
+    await this.activityLogModel.updateMany(
+      { userId },
+      { $set: { userId: anon } },
+    );
 
     // SAGA-04 step 3 — audit trail with the email snapshot.
     await this.prisma.auditLog.create({

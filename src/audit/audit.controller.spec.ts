@@ -29,7 +29,13 @@ describe('AuditController', () => {
     mockService.findAll.mockReturnValue(list);
 
     expect(
-      controller.findAll('a1', 'POST /user', 'user', '2026-01-01', '2026-12-31'),
+      controller.findAll(
+        'a1',
+        'POST /user',
+        'user',
+        '2026-01-01',
+        '2026-12-31',
+      ),
     ).toBe(list);
     expect(mockService.findAll).toHaveBeenCalledWith({
       actorId: 'a1',

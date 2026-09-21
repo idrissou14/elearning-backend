@@ -56,7 +56,9 @@ export class EvaluationController {
   @Roles(Role.ADMIN, Role.TEACHER)
   @Patch(':id')
   @ApiOkResponse({ description: 'Evaluation updated' })
-  @ApiNotFoundResponse({ description: 'Evaluation or course instance not found' })
+  @ApiNotFoundResponse({
+    description: 'Evaluation or course instance not found',
+  })
   update(@Param('id') id: string, @Body() dto: UpdateEvaluationDto) {
     return this.evaluationService.update(id, dto);
   }

@@ -50,7 +50,9 @@ describe('CurriculumCourseService', () => {
     it('throws NotFoundException when missing', async () => {
       mockPrisma.curriculumCourse.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('missing')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -70,11 +72,15 @@ describe('CurriculumCourseService', () => {
 
       await expect(service.create(dto)).resolves.toEqual({ id: '1', ...dto });
       expect(mockProgramLevelService.findOne).toHaveBeenCalledWith('pl1');
-      expect(mockPrisma.curriculumCourse.create).toHaveBeenCalledWith({ data: dto });
+      expect(mockPrisma.curriculumCourse.create).toHaveBeenCalledWith({
+        data: dto,
+      });
     });
 
     it('propagates NotFoundException when the program level does not exist', async () => {
-      mockProgramLevelService.findOne.mockRejectedValue(new NotFoundException());
+      mockProgramLevelService.findOne.mockRejectedValue(
+        new NotFoundException(),
+      );
 
       await expect(service.create(dto)).rejects.toThrow(NotFoundException);
       expect(mockPrisma.curriculumCourse.create).not.toHaveBeenCalled();
@@ -82,7 +88,10 @@ describe('CurriculumCourseService', () => {
 
     it('throws ConflictException when the code already exists', async () => {
       mockProgramLevelService.findOne.mockResolvedValue({ id: 'pl1' });
-      mockPrisma.curriculumCourse.findUnique.mockResolvedValue({ id: '99', code: 'ALGO' });
+      mockPrisma.curriculumCourse.findUnique.mockResolvedValue({
+        id: '99',
+        code: 'ALGO',
+      });
 
       await expect(service.create(dto)).rejects.toThrow(ConflictException);
       expect(mockPrisma.curriculumCourse.create).not.toHaveBeenCalled();
@@ -99,9 +108,15 @@ describe('CurriculumCourseService', () => {
     });
 
     it('validates the new program level when programLevelId changes', async () => {
-      mockPrisma.curriculumCourse.findUnique.mockResolvedValue({ id: '1', name: 'Old' });
+      mockPrisma.curriculumCourse.findUnique.mockResolvedValue({
+        id: '1',
+        name: 'Old',
+      });
       mockProgramLevelService.findOne.mockResolvedValue({ id: 'pl2' });
-      mockPrisma.curriculumCourse.update.mockResolvedValue({ id: '1', programLevelId: 'pl2' });
+      mockPrisma.curriculumCourse.update.mockResolvedValue({
+        id: '1',
+        programLevelId: 'pl2',
+      });
 
       await service.update('1', { programLevelId: 'pl2' });
       expect(mockProgramLevelService.findOne).toHaveBeenCalledWith('pl2');
@@ -132,7 +147,9 @@ describe('CurriculumCourseService', () => {
     it('throws NotFoundException when deleting a missing course', async () => {
       mockPrisma.curriculumCourse.findUnique.mockResolvedValue(null);
 
-      await expect(service.remove('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.remove('missing')).rejects.toThrow(
+        NotFoundException,
+      );
       expect(mockPrisma.curriculumCourse.delete).not.toHaveBeenCalled();
     });
   });

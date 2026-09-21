@@ -31,10 +31,7 @@ export class UserController {
 
   @Get()
   @ApiOkResponse({ description: 'List of users' })
-  findAll(
-    @Query('role') role?: Role,
-    @Query('status') status?: UserStatus,
-  ) {
+  findAll(@Query('role') role?: Role, @Query('status') status?: UserStatus) {
     return this.userService.findAll({ role, status });
   }
 

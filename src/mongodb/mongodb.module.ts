@@ -1,17 +1,11 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import {
-  ActivityLog,
-  ActivityLogSchema,
-} from './schemas/activity-log.schema';
+import { ActivityLog, ActivityLogSchema } from './schemas/activity-log.schema';
 import {
   CourseContent,
   CourseContentSchema,
 } from './schemas/course-content.schema';
-import {
-  ForumThread,
-  ForumThreadSchema,
-} from './schemas/forum-thread.schema';
+import { ForumThread, ForumThreadSchema } from './schemas/forum-thread.schema';
 import {
   LearnerProgress,
   LearnerProgressSchema,

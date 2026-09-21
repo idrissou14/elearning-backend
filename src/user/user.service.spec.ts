@@ -36,7 +36,9 @@ describe('UserService', () => {
       mockPrisma.user.findMany.mockResolvedValue([]);
       await service.findAll();
       expect(mockPrisma.user.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: expect.objectContaining({ deletedAt: null }) }),
+        expect.objectContaining({
+          where: expect.objectContaining({ deletedAt: null }),
+        }),
       );
     });
   });
@@ -44,7 +46,9 @@ describe('UserService', () => {
   describe('findOne', () => {
     it('throws NotFoundException when user does not exist', async () => {
       mockPrisma.user.findFirst.mockResolvedValue(null);
-      await expect(service.findOne('missing-id')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('missing-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('returns the user when found', async () => {
@@ -68,7 +72,10 @@ describe('UserService', () => {
 
     it('hashes the password and excludes plain text', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(null);
-      mockPrisma.user.create.mockResolvedValue({ id: '1', email: 'new@example.com' });
+      mockPrisma.user.create.mockResolvedValue({
+        id: '1',
+        email: 'new@example.com',
+      });
       const dto: CreateUserDto = {
         email: 'new@example.com',
         firstName: 'Jane',
@@ -86,7 +93,9 @@ describe('UserService', () => {
   describe('update', () => {
     it('throws NotFoundException for unknown id', async () => {
       mockPrisma.user.findFirst.mockResolvedValue(null);
-      await expect(service.update('bad-id', { firstName: 'X' })).rejects.toThrow(NotFoundException);
+      await expect(
+        service.update('bad-id', { firstName: 'X' }),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 

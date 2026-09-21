@@ -32,10 +32,15 @@ export class LmsContentController {
   @Roles(Role.ADMIN, Role.TEACHER)
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Create/publish the LMS content of a course instance (SAGA-01)' })
+  @ApiOperation({
+    summary: 'Create/publish the LMS content of a course instance (SAGA-01)',
+  })
   @ApiCreatedResponse({ description: 'Course content created and linked' })
   @ApiNotFoundResponse({ description: 'Course instance not found' })
-  create(@Param('id') courseInstanceId: string, @Body() dto: CreateCourseContentDto) {
+  create(
+    @Param('id') courseInstanceId: string,
+    @Body() dto: CreateCourseContentDto,
+  ) {
     return this.lmsContentService.createContent(courseInstanceId, dto);
   }
 
@@ -44,7 +49,9 @@ export class LmsContentController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Read merged course content + learner progress' })
   @ApiOkResponse({ description: 'Metadata + content + progress' })
-  @ApiForbiddenResponse({ description: 'User not enrolled in this class group' })
+  @ApiForbiddenResponse({
+    description: 'User not enrolled in this class group',
+  })
   @ApiNotFoundResponse({ description: 'Course instance or content not found' })
   getContent(
     @Param('id') courseInstanceId: string,

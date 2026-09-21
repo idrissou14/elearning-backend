@@ -71,17 +71,22 @@ describe('AuditService', () => {
   });
 
   describe('findOne', () => {
-    it('returns the log when found', async () => {
+    it('returns the sanitized log when found', async () => {
       const log = { id: '1', action: 'POST /user' };
       mockPrisma.auditLog.findUnique.mockResolvedValue(log);
 
-      await expect(service.findOne('1')).resolves.toEqual(log);
+      await expect(service.findOne('1')).resolves.toEqual({
+        ...log,
+        payload: null,
+      });
     });
 
     it('throws NotFoundException when missing', async () => {
       mockPrisma.auditLog.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('missing')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 

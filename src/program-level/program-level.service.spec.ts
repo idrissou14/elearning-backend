@@ -41,7 +41,12 @@ describe('ProgramLevelService', () => {
 
   describe('findOne', () => {
     it('returns the level when found', async () => {
-      const level = { id: '1', programId: 'p1', levelName: 'L1', levelOrder: 1 };
+      const level = {
+        id: '1',
+        programId: 'p1',
+        levelName: 'L1',
+        levelOrder: 1,
+      };
       mockPrisma.programLevel.findUnique.mockResolvedValue(level);
 
       await expect(service.findOne('1')).resolves.toEqual(level);
@@ -50,7 +55,9 @@ describe('ProgramLevelService', () => {
     it('throws NotFoundException when missing', async () => {
       mockPrisma.programLevel.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('missing')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -64,7 +71,9 @@ describe('ProgramLevelService', () => {
 
       await expect(service.create(dto)).resolves.toEqual({ id: '1', ...dto });
       expect(mockProgramService.findOne).toHaveBeenCalledWith('p1');
-      expect(mockPrisma.programLevel.create).toHaveBeenCalledWith({ data: dto });
+      expect(mockPrisma.programLevel.create).toHaveBeenCalledWith({
+        data: dto,
+      });
     });
 
     it('propagates NotFoundException when the program does not exist', async () => {
@@ -76,7 +85,10 @@ describe('ProgramLevelService', () => {
 
     it('throws ConflictException when the level name already exists in the program', async () => {
       mockProgramService.findOne.mockResolvedValue({ id: 'p1' });
-      mockPrisma.programLevel.findFirst.mockResolvedValue({ id: '99', levelName: 'L1' });
+      mockPrisma.programLevel.findFirst.mockResolvedValue({
+        id: '99',
+        levelName: 'L1',
+      });
 
       await expect(service.create(dto)).rejects.toThrow(ConflictException);
       expect(mockPrisma.programLevel.create).not.toHaveBeenCalled();
@@ -87,16 +99,24 @@ describe('ProgramLevelService', () => {
     it('throws NotFoundException when the level does not exist', async () => {
       mockPrisma.programLevel.findUnique.mockResolvedValue(null);
 
-      await expect(service.update('missing', { levelName: 'X' })).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.update('missing', { levelName: 'X' }),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('uses the existing program/name when not provided in the update', async () => {
-      const current = { id: '1', programId: 'p1', levelName: 'L1', levelOrder: 1 };
+      const current = {
+        id: '1',
+        programId: 'p1',
+        levelName: 'L1',
+        levelOrder: 1,
+      };
       mockPrisma.programLevel.findUnique.mockResolvedValue(current);
       mockPrisma.programLevel.findFirst.mockResolvedValue(current); // same record, allowed
-      mockPrisma.programLevel.update.mockResolvedValue({ ...current, levelOrder: 2 });
+      mockPrisma.programLevel.update.mockResolvedValue({
+        ...current,
+        levelOrder: 2,
+      });
 
       await service.update('1', { levelOrder: 2 });
       expect(mockPrisma.programLevel.findFirst).toHaveBeenCalledWith({
@@ -111,7 +131,10 @@ describe('ProgramLevelService', () => {
         levelName: 'L1',
         levelOrder: 1,
       });
-      mockPrisma.programLevel.findFirst.mockResolvedValue({ id: '2', levelName: 'L2' });
+      mockPrisma.programLevel.findFirst.mockResolvedValue({
+        id: '2',
+        levelName: 'L2',
+      });
 
       await expect(service.update('1', { levelName: 'L2' })).rejects.toThrow(
         ConflictException,
@@ -125,13 +148,17 @@ describe('ProgramLevelService', () => {
       mockPrisma.programLevel.delete.mockResolvedValue({ id: '1' });
 
       await service.remove('1');
-      expect(mockPrisma.programLevel.delete).toHaveBeenCalledWith({ where: { id: '1' } });
+      expect(mockPrisma.programLevel.delete).toHaveBeenCalledWith({
+        where: { id: '1' },
+      });
     });
 
     it('throws NotFoundException when deleting a missing level', async () => {
       mockPrisma.programLevel.findUnique.mockResolvedValue(null);
 
-      await expect(service.remove('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.remove('missing')).rejects.toThrow(
+        NotFoundException,
+      );
       expect(mockPrisma.programLevel.delete).not.toHaveBeenCalled();
     });
   });

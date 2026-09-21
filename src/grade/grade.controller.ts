@@ -49,8 +49,12 @@ export class GradeController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiCreatedResponse({ description: 'Grade created' })
-  @ApiNotFoundResponse({ description: 'Enrollment, evaluation or grader not found' })
-  @ApiBadRequestResponse({ description: 'Score exceeds maximum or grader not allowed' })
+  @ApiNotFoundResponse({
+    description: 'Enrollment, evaluation or grader not found',
+  })
+  @ApiBadRequestResponse({
+    description: 'Score exceeds maximum or grader not allowed',
+  })
   create(@Body() dto: CreateGradeDto) {
     return this.gradeService.create(dto);
   }
@@ -59,7 +63,9 @@ export class GradeController {
   @Patch(':id')
   @ApiOkResponse({ description: 'Grade updated' })
   @ApiNotFoundResponse({ description: 'Grade or related resource not found' })
-  @ApiBadRequestResponse({ description: 'Score exceeds maximum or grader not allowed' })
+  @ApiBadRequestResponse({
+    description: 'Score exceeds maximum or grader not allowed',
+  })
   update(@Param('id') id: string, @Body() dto: UpdateGradeDto) {
     return this.gradeService.update(id, dto);
   }

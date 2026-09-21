@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { DepartementService } from '../departement/departement.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProgramDto } from './dto/create-program.dto';
@@ -34,7 +38,8 @@ export class ProgramService {
 
   async update(id: string, dto: UpdateProgramDto) {
     await this.findOne(id);
-    if (dto.departmentId) await this.departementService.findOne(dto.departmentId);
+    if (dto.departmentId)
+      await this.departementService.findOne(dto.departmentId);
     await this.ensureCodeIsAvailable(dto.code, id);
     return this.prisma.program.update({ where: { id }, data: dto });
   }

@@ -32,8 +32,11 @@ export class CourseTeacherService {
   }
 
   async findOne(id: string) {
-    const assignment = await this.prisma.courseTeacher.findUnique({ where: { id } });
-    if (!assignment) throw new NotFoundException(`Course teacher ${id} not found`);
+    const assignment = await this.prisma.courseTeacher.findUnique({
+      where: { id },
+    });
+    if (!assignment)
+      throw new NotFoundException(`Course teacher ${id} not found`);
     return assignment;
   }
 
@@ -61,7 +64,10 @@ export class CourseTeacherService {
     }
   }
 
-  private async ensureNotAlreadyAssigned(courseInstanceId: string, teacherId: string) {
+  private async ensureNotAlreadyAssigned(
+    courseInstanceId: string,
+    teacherId: string,
+  ) {
     const existing = await this.prisma.courseTeacher.findFirst({
       where: { courseInstanceId, teacherId },
     });
