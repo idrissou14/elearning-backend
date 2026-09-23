@@ -47,6 +47,11 @@ enum EnrollmentType {
   RENFORCEMENT // inscription à une seule matière (CourseInstance)
 }
 
+enum GradeStatus {
+  DRAFT
+  PUBLISHED
+}
+
 enum CourseTeacherRole {
   MAIN_TEACHER
   ASSISTANT
@@ -205,6 +210,7 @@ model User {
   enrollments    Enrollment[]
   courseTeaching CourseTeacher[]
   gradesGiven    Grade[]         @relation("GradedBy")
+  notifications  Notification[]
 
   @@index([email])
   @@index([status])
@@ -285,13 +291,15 @@ model Evaluation {
 }
 
 model Grade {
-  id           String   @id @default(uuid())
-  enrollmentId String   @map("enrollment_id")
-  evaluationId String   @map("evaluation_id")
-  score        Decimal  @db.Decimal(5, 2)
-  gradedBy     String?  @map("graded_by")
-  gradedAt     DateTime @default(now()) @map("graded_at")
+  id           String      @id @default(uuid())
+  enrollmentId String      @map("enrollment_id")
+  evaluationId String      @map("evaluation_id")
+  score        Decimal     @db.Decimal(5, 2)
+  gradedBy     String?     @map("graded_by")
+  gradedAt     DateTime    @default(now()) @map("graded_at")
   comment      String?
+  status       GradeStatus @default(DRAFT) @map("status")
+  publishedAt  DateTime?   @map("published_at")
 
   enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
   evaluation Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
@@ -336,4 +344,22 @@ model AuditLog {
   @@index([createdAt])
   @@index([action])
   @@map("audit_logs")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  type      String
+  title     String
+  message   String
+  data      Json     @default("{}")
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, read])
+  @@index([createdAt])
+  @@map("notifications")
 }

@@ -63,22 +63,25 @@ export class StudentService {
     });
 
     const grades = enrollments.flatMap((e) =>
-      e.grades.map((g) => {
-        const score = Number(g.score);
-        const maxScore = Number(g.evaluation.maxScore);
-        return {
-          id: g.id,
-          score,
-          maxScore,
-          scoreOn20: maxScore > 0 ? round2((score / maxScore) * 20) : 0,
-          gradedAt: g.gradedAt,
-          comment: g.comment,
-          evaluationName: g.evaluation.name,
-          evaluationType: g.evaluation.type,
-          courseName: g.evaluation.courseInstance.curriculumCourse.name,
-          academicYear: e.academicYear,
-        };
-      }),
+      e.grades
+        .filter((g) => g.status === 'PUBLISHED')
+        .map((g) => {
+          const score = Number(g.score);
+          const maxScore = Number(g.evaluation.maxScore);
+          return {
+            id: g.id,
+            score,
+            maxScore,
+            scoreOn20: maxScore > 0 ? round2((score / maxScore) * 20) : 0,
+            gradedAt: g.gradedAt,
+            comment: g.comment,
+            evaluationName: g.evaluation.name,
+            evaluationType: g.evaluation.type,
+            courseName: g.evaluation.courseInstance.curriculumCourse.name,
+            academicYear: e.academicYear,
+            publishedAt: g.publishedAt,
+          };
+        }),
     );
 
     const certificates = enrollments.flatMap((e) => {

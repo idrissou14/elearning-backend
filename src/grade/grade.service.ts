@@ -7,9 +7,10 @@ import {
 import { Role } from '../../generated/prisma/enums';
 import { EnrollmentService } from '../enrollment/enrollment.service';
 import { EvaluationService } from '../evaluation/evaluation.service';
+import { NotificationService } from '../notification/notification.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserService } from '../user/user.service';
-import { CreateGradeDto } from './dto/create-grade.dto';
+import { CreateGradeDto, GradeStatus } from './dto/create-grade.dto';
 import { UpdateGradeDto } from './dto/update-grade.dto';
 
 @Injectable()
@@ -18,14 +19,16 @@ export class GradeService {
     private readonly prisma: PrismaService,
     private readonly enrollmentService: EnrollmentService,
     private readonly evaluationService: EvaluationService,
+    private readonly notificationService: NotificationService,
     private readonly userService: UserService,
   ) {}
 
-  findAll(filters?: { enrollmentId?: string; evaluationId?: string }) {
+  findAll(filters?: { enrollmentId?: string; evaluationId?: string; status?: GradeStatus }) {
     return this.prisma.grade.findMany({
       where: {
         ...(filters?.enrollmentId && { enrollmentId: filters.enrollmentId }),
         ...(filters?.evaluationId && { evaluationId: filters.evaluationId }),
+        ...(filters?.status && { status: filters.status }),
       },
       orderBy: { gradedAt: 'desc' },
     });
@@ -43,7 +46,13 @@ export class GradeService {
     this.assertScoreWithinMax(dto.score, Number(evaluation.maxScore));
     if (dto.gradedBy) await this.ensureUserCanGrade(dto.gradedBy);
     await this.ensureNotAlreadyGraded(dto.enrollmentId, dto.evaluationId);
-    return this.prisma.grade.create({ data: dto });
+
+    const data: any = { ...dto };
+    if (dto.status === GradeStatus.PUBLISHED) {
+      data.publishedAt = new Date();
+    }
+
+    return this.prisma.grade.create({ data });
   }
 
   async update(id: string, dto: UpdateGradeDto) {
@@ -63,7 +72,54 @@ export class GradeService {
     const enrollmentId = dto.enrollmentId ?? current.enrollmentId;
     await this.ensureNotAlreadyGraded(enrollmentId, evaluationId, id);
 
-    return this.prisma.grade.update({ where: { id }, data: dto });
+    const data: any = { ...dto };
+    if (dto.status === GradeStatus.PUBLISHED && current.status !== GradeStatus.PUBLISHED) {
+      data.publishedAt = new Date();
+    } else if (dto.status === GradeStatus.DRAFT && current.status === GradeStatus.PUBLISHED) {
+      data.publishedAt = null;
+    }
+
+    return this.prisma.grade.update({ where: { id }, data });
+  }
+
+  async publish(id: string) {
+    const current = await this.findOne(id);
+    if (current.status === GradeStatus.PUBLISHED) {
+      return current;
+    }
+    const updated = await this.prisma.grade.update({
+      where: { id },
+      data: { status: GradeStatus.PUBLISHED, publishedAt: new Date() },
+      include: {
+        enrollment: { include: { user: true } },
+        evaluation: { include: { courseInstance: { include: { curriculumCourse: true } } } },
+      },
+    });
+
+    // Send notification to student
+    if (updated.enrollment?.user) {
+      await this.notificationService.notifyGradePublished(
+        updated.enrollment.user.id,
+        updated.evaluation.courseInstance.curriculumCourse.name,
+        updated.evaluation.name,
+        Number(updated.score),
+        Number(updated.evaluation.maxScore),
+        updated.id,
+      );
+    }
+
+    return updated;
+  }
+
+  async unpublish(id: string) {
+    const current = await this.findOne(id);
+    if (current.status === GradeStatus.DRAFT) {
+      return current;
+    }
+    return this.prisma.grade.update({
+      where: { id },
+      data: { status: GradeStatus.DRAFT, publishedAt: null },
+    });
   }
 
   async remove(id: string) {

@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  IsEnum,
   IsNumber,
   IsOptional,
   IsString,
@@ -7,6 +8,11 @@ import {
   Max,
   Min,
 } from 'class-validator';
+
+export enum GradeStatus {
+  DRAFT = 'DRAFT',
+  PUBLISHED = 'PUBLISHED',
+}
 
 export class CreateGradeDto {
   @ApiProperty({ example: '3f1a8c2e-1d4b-4a6e-9c0f-7b2d5e8a1c3d' })
@@ -35,4 +41,15 @@ export class CreateGradeDto {
   @IsOptional()
   @IsString()
   comment?: string;
+
+  @ApiPropertyOptional({ enum: GradeStatus, default: GradeStatus.DRAFT })
+  @IsOptional()
+  @IsEnum(GradeStatus)
+  status?: GradeStatus = GradeStatus.DRAFT;
+}
+
+export class PublishGradeDto {
+  @ApiProperty({ enum: GradeStatus })
+  @IsEnum(GradeStatus)
+  status: GradeStatus;
 }

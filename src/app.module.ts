@@ -23,6 +23,7 @@ import { ConsistencyModule } from './consistency/consistency.module';
 import { LmsModule } from './lms/lms.module';
 import { StudentModule } from './student/student.module';
 import { TeacherModule } from './teacher/teacher.module';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { TeacherModule } from './teacher/teacher.module';
     LmsModule,
     StudentModule,
     TeacherModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -7,6 +7,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Role } from '../../generated/prisma/enums';
 import { EnrollmentService } from '../enrollment/enrollment.service';
 import { EvaluationService } from '../evaluation/evaluation.service';
+import { NotificationService } from '../notification/notification.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserService } from '../user/user.service';
 import { GradeService } from './grade.service';
@@ -25,6 +26,7 @@ const mockPrisma = {
 const mockEnrollmentService = { findOne: jest.fn() };
 const mockEvaluationService = { findOne: jest.fn() };
 const mockUserService = { findOne: jest.fn() };
+const mockNotificationService = { notifyGradePublished: jest.fn().mockResolvedValue({}) };
 
 describe('GradeService', () => {
   let service: GradeService;
@@ -36,6 +38,7 @@ describe('GradeService', () => {
         { provide: PrismaService, useValue: mockPrisma },
         { provide: EnrollmentService, useValue: mockEnrollmentService },
         { provide: EvaluationService, useValue: mockEvaluationService },
+        { provide: NotificationService, useValue: mockNotificationService },
         { provide: UserService, useValue: mockUserService },
       ],
     }).compile();

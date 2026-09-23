@@ -18,7 +18,7 @@ import {
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { CreateGradeDto } from './dto/create-grade.dto';
+import { CreateGradeDto, GradeStatus, PublishGradeDto } from './dto/create-grade.dto';
 import { UpdateGradeDto } from './dto/update-grade.dto';
 import { Role } from '../../generated/prisma/enums';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -34,8 +34,9 @@ export class GradeController {
   findAll(
     @Query('enrollmentId') enrollmentId?: string,
     @Query('evaluationId') evaluationId?: string,
+    @Query('status') status?: GradeStatus,
   ) {
-    return this.gradeService.findAll({ enrollmentId, evaluationId });
+    return this.gradeService.findAll({ enrollmentId, evaluationId, status });
   }
 
   @Get(':id')
@@ -68,6 +69,24 @@ export class GradeController {
   })
   update(@Param('id') id: string, @Body() dto: UpdateGradeDto) {
     return this.gradeService.update(id, dto);
+  }
+
+  @Roles(Role.ADMIN, Role.TEACHER)
+  @Patch(':id/publish')
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ description: 'Grade published' })
+  @ApiNotFoundResponse({ description: 'Grade not found' })
+  publish(@Param('id') id: string) {
+    return this.gradeService.publish(id);
+  }
+
+  @Roles(Role.ADMIN, Role.TEACHER)
+  @Patch(':id/unpublish')
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ description: 'Grade unpublished (back to draft)' })
+  @ApiNotFoundResponse({ description: 'Grade not found' })
+  unpublish(@Param('id') id: string) {
+    return this.gradeService.unpublish(id);
   }
 
   @Roles(Role.ADMIN, Role.TEACHER)
